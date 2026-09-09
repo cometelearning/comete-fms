@@ -19,7 +19,21 @@ export interface MasterField {
 export interface MasterColumn {
   key: string;
   label: string;
-  render?: (row: Record<string, any>) => React.ReactNode; // eslint-disable-line @typescript-eslint/no-explicit-any
+  // Columns are defined in a server component and passed as props to this
+  // client component, so they must be plain serializable data - never a
+  // function (React cannot send functions across the server/client
+  // boundary). 'boolean' formats a checkbox-backed field as Yes/blank;
+  // 'lookup' resolves row[key] (e.g. a foreign-key id) through `map`, a
+  // plain { id: label } object built server-side.
+  type?: 'boolean' | 'lookup';
+  map?: Record<string, string>;
+}
+
+function renderCell(column: MasterColumn, row: Record<string, any>): React.ReactNode { // eslint-disable-line @typescript-eslint/no-explicit-any
+  const value = row[column.key];
+  if (column.type === 'boolean') return value ? 'Yes' : '';
+  if (column.type === 'lookup') return (column.map && column.map[String(value)]) ?? '-';
+  return value ?? '-';
 }
 
 interface Props {
@@ -137,7 +151,7 @@ export function MasterCrudPage({ title, description, apiPath, fields, columns, h
               {rows.map((row) => (
                 <tr key={row.id}>
                   {columns.map((c) => (
-                    <td key={c.key}>{c.render ? c.render(row) : (row[c.key] ?? '-')}</td>
+                    <td key={c.key}>{renderCell(c, row)}</td>
                   ))}
                   {hasStatus && (
                     <td>

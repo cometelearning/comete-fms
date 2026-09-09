@@ -22,7 +22,7 @@ export default async function AcademicYearsPage() {
         { key: 'name', label: 'Name' },
         { key: 'start_date', label: 'Start date' },
         { key: 'end_date', label: 'End date' },
-        { key: 'is_current', label: 'Current', render: (r) => (r.is_current ? 'Yes' : '') }
+        { key: 'is_current', label: 'Current', type: 'boolean' }
       ]}
     />
   );

@@ -15,8 +15,10 @@ export default async function BatchesPage() {
 
   const courseOptions = (courses ?? []).map((c) => ({ value: c.id, label: c.name }));
   const yearOptions = (years ?? []).map((y) => ({ value: y.id, label: y.name }));
-  const courseMap = new Map((courses ?? []).map((c) => [c.id, c.name]));
-  const yearMap = new Map((years ?? []).map((y) => [y.id, y.name]));
+  // Plain objects, not Map instances - only JSON-serializable data can be
+  // passed as a prop from this server component to the client component.
+  const courseMap = Object.fromEntries((courses ?? []).map((c) => [c.id, c.name]));
+  const yearMap = Object.fromEntries((years ?? []).map((y) => [y.id, y.name]));
 
   return (
     <MasterCrudPage
@@ -31,8 +33,8 @@ export default async function BatchesPage() {
       ]}
       columns={[
         { key: 'name', label: 'Batch name' },
-        { key: 'course_id', label: 'Course', render: (r) => courseMap.get(r.course_id) ?? '-' },
-        { key: 'academic_year_id', label: 'Academic Year', render: (r) => yearMap.get(r.academic_year_id) ?? '-' }
+        { key: 'course_id', label: 'Course', type: 'lookup', map: courseMap },
+        { key: 'academic_year_id', label: 'Academic Year', type: 'lookup', map: yearMap }
       ]}
     />
   );
