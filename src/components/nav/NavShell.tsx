@@ -10,11 +10,29 @@ interface NavItem {
   href: string;
   label: string;
   permission?: Permission;
+  children?: NavItem[];
 }
 
+// "Masters" bundles the setup screens (Academic Year / Course / Batch / Fee
+// Head) that a fee structure depends on. These are deliberately grouped
+// under one entry rather than added as separate top-level items, per the
+// spec's "keep navigation clean, no unnecessary items" instruction - but
+// each one is a real, permission-gated CRUD page (masters.read/write),
+// they just need to be reachable to actually use the app end-to-end.
 const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', permission: 'dashboard.view' },
   { href: '/students', label: 'Students', permission: 'students.read' },
+  {
+    href: '/academic-years',
+    label: 'Masters',
+    permission: 'masters.read',
+    children: [
+      { href: '/academic-years', label: 'Academic Years', permission: 'masters.read' },
+      { href: '/courses', label: 'Courses', permission: 'masters.read' },
+      { href: '/batches', label: 'Batches', permission: 'masters.read' },
+      { href: '/fee-heads', label: 'Fee Heads', permission: 'masters.read' }
+    ]
+  },
   { href: '/fee-structures', label: 'Fee Structures', permission: 'fee_structures.read' },
   { href: '/student-fees', label: 'Student Fees', permission: 'student_fees.read' },
   { href: '/collect-fee', label: 'Collect Fee', permission: 'payments.collect' },
@@ -40,7 +58,14 @@ export function NavShell({
   const pathname = usePathname();
   const router = useRouter();
   const permSet = new Set(permissions);
-  const items = NAV_ITEMS.filter((i) => !i.permission || permSet.has(i.permission));
+  const items = NAV_ITEMS.filter((i) => !i.permission || permSet.has(i.permission)).map((i) => ({
+    ...i,
+    children: i.children?.filter((c) => !c.permission || permSet.has(c.permission))
+  }));
+  const isWithin = (href: string) => pathname === href || pathname?.startsWith(href + '/');
+  const [mastersOpen, setMastersOpen] = useState(() =>
+    ['/academic-years', '/courses', '/batches', '/fee-heads'].some((h) => isWithin(h))
+  );
 
   async function signOut() {
     const supabase = createClient();
@@ -81,7 +106,45 @@ export function NavShell({
         </div>
         <nav className="flex flex-col gap-1 p-3">
           {items.map((item) => {
-            const active = pathname === item.href || pathname?.startsWith(item.href + '/');
+            if (item.children && item.children.length > 0) {
+              const groupActive = item.children.some((c) => isWithin(c.href));
+              return (
+                <div key={item.label}>
+                  <button
+                    type="button"
+                    onClick={() => setMastersOpen((v) => !v)}
+                    aria-expanded={mastersOpen}
+                    className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm font-medium ${
+                      groupActive ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    {item.label}
+                    <ChevronIcon open={mastersOpen} />
+                  </button>
+                  {mastersOpen && (
+                    <div className="ml-3 mt-1 flex flex-col gap-1 border-l border-slate-100 pl-3">
+                      {item.children.map((child) => {
+                        const active = isWithin(child.href);
+                        return (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            onClick={() => setMobileOpen(false)}
+                            className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+                              active ? 'bg-brand-50 text-brand-700' : 'text-slate-500 hover:bg-slate-100'
+                            }`}
+                          >
+                            {child.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            const active = isWithin(item.href);
             return (
               <Link
                 key={item.href}
@@ -125,6 +188,21 @@ function CloseIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+    </svg>
+  );
+}
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className={`transition-transform ${open ? 'rotate-90' : ''}`}
+    >
+      <path d="M9 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
