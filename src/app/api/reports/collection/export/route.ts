@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { requirePermission } from '@/lib/auth/session';
 import { apiError } from '@/lib/api/handler';
 import { buildCollectionQuery } from '@/lib/reports/collectionQuery';
+import { resolveClassToCourseIds } from '@/lib/reports/classFilter';
 import { toCsv, toXlsx, type ExportColumn } from '@/lib/export/tabular';
 import { generateTablePdf, type TableColumn } from '@/lib/pdf/table';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
@@ -17,12 +18,14 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const format = (searchParams.get('format') ?? 'csv') as 'csv' | 'xlsx' | 'pdf';
 
+    const courseIds = await resolveClassToCourseIds(supabase, session.orgId, searchParams.get('class_standard'));
+
     const query = buildCollectionQuery(supabase, {
       orgId: session.orgId,
       from: searchParams.get('from'),
       to: searchParams.get('to'),
       courseId: searchParams.get('course_id'),
-      batchId: searchParams.get('batch_id'),
+      courseIds,
       paymentMode: searchParams.get('payment_mode'),
       createdBy: searchParams.get('created_by')
     });
@@ -36,7 +39,7 @@ export async function GET(request: Request) {
       student: p.students?.name,
       student_code: p.students?.student_code,
       course: p.students?.courses?.name ?? '',
-      batch: p.students?.batches?.name ?? '',
+      class: p.students?.courses?.class_standard ?? '',
       amount: Number(p.amount).toFixed(2),
       mode: p.payment_mode,
       reference: p.reference_number ?? '',
@@ -52,7 +55,7 @@ export async function GET(request: Request) {
         { key: 'student', label: 'Student', width: 22 },
         { key: 'student_code', label: 'Student ID', width: 16 },
         { key: 'course', label: 'Course', width: 16 },
-        { key: 'batch', label: 'Batch', width: 14 },
+        { key: 'class', label: 'Class', width: 14 },
         { key: 'amount', label: 'Amount', width: 12 },
         { key: 'mode', label: 'Mode', width: 12 },
         { key: 'reference', label: 'Reference', width: 16 },
@@ -94,7 +97,7 @@ export async function GET(request: Request) {
       { key: 'student', label: 'Student' },
       { key: 'student_code', label: 'Student ID' },
       { key: 'course', label: 'Course' },
-      { key: 'batch', label: 'Batch' },
+      { key: 'class', label: 'Class' },
       { key: 'amount', label: 'Amount' },
       { key: 'mode', label: 'Mode' },
       { key: 'reference', label: 'Reference' },

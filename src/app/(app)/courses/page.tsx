@@ -8,8 +8,8 @@ export default async function CoursesPage() {
 
   return (
     <MasterCrudPage
-      title="Courses"
-      description="Course / Class master, e.g. Class 10, Class 12 Commerce, CA Foundation."
+      title="Courses / Classes"
+      description="Every course or class you run, e.g. Class 10, Class 12 Commerce, CA Foundation. Fill in Class / Standard to group several courses under the same class for reporting."
       apiPath="/api/courses"
       canWrite={session.permissions.has('masters.write')}
       fields={[

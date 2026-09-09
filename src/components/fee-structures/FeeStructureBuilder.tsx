@@ -5,11 +5,6 @@ import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/lib/utils/format';
 import type { FieldOption } from '@/components/masters/MasterCrudPage';
 
-interface BatchOption {
-  value: string;
-  label: string;
-  courseId: string;
-}
 interface FeeHeadOption {
   value: string;
   label: string;
@@ -29,19 +24,16 @@ interface InstallmentRow {
 export function FeeStructureBuilder({
   years,
   courses,
-  batches,
   feeHeads
 }: {
   years: FieldOption[];
   courses: FieldOption[];
-  batches: BatchOption[];
   feeHeads: FeeHeadOption[];
 }) {
   const router = useRouter();
   const [name, setName] = useState('');
   const [academicYearId, setAcademicYearId] = useState('');
   const [courseId, setCourseId] = useState('');
-  const [batchId, setBatchId] = useState('');
   const [items, setItems] = useState<ItemRow[]>([{ fee_head_id: '', amount: '' }]);
   const [installments, setInstallments] = useState<InstallmentRow[]>([
     { seq_no: 1, label: 'Installment 1', amount: '', due_date: '' }
@@ -55,8 +47,6 @@ export function FeeStructureBuilder({
   const totalFee = useMemo(() => items.reduce((sum, i) => sum + (Number(i.amount) || 0), 0), [items]);
   const installmentTotal = useMemo(() => installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0), [installments]);
   const balanced = totalFee > 0 && Math.abs(totalFee - installmentTotal) < 0.01;
-
-  const filteredBatches = courseId ? batches.filter((b) => b.courseId === courseId) : batches;
 
   function updateItem(idx: number, patch: Partial<ItemRow>) {
     setItems((rows) => rows.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
@@ -111,7 +101,7 @@ export function FeeStructureBuilder({
           name,
           academic_year_id: academicYearId,
           course_id: courseId,
-          batch_id: batchId || null,
+          batch_id: null,
           items: items.filter((i) => i.fee_head_id && i.amount).map((i) => ({ fee_head_id: i.fee_head_id, amount: Number(i.amount) })),
           installments: installments
             .filter((i) => i.amount && i.due_date)
@@ -155,17 +145,6 @@ export function FeeStructureBuilder({
             {courses.map((c) => (
               <option key={c.value} value={c.value}>
                 {c.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="label">Batch (optional)</label>
-          <select className="input" value={batchId} onChange={(e) => setBatchId(e.target.value)}>
-            <option value="">Applies to whole course</option>
-            {filteredBatches.map((b) => (
-              <option key={b.value} value={b.value}>
-                {b.label}
               </option>
             ))}
           </select>

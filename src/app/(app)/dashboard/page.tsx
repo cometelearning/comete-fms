@@ -4,17 +4,36 @@ import { getSession } from '@/lib/auth/session';
 import { createClient } from '@/lib/supabase/server';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { BarList } from '@/components/dashboard/BarList';
+import { DashboardFilters } from '@/components/dashboard/DashboardFilters';
 import { Badge } from '@/components/ui/Badge';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils/format';
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams
+}: {
+  searchParams: { academic_year_id?: string; course_id?: string; class_standard?: string };
+}) {
   const session = await getSession();
   if (!session || !session.permissions.has('dashboard.view')) redirect('/login');
 
   const supabase = createClient();
 
-  const [{ data: summary, error: summaryError }, { data: recentReceipts }, { data: upcomingDue }] = await Promise.all([
-    supabase.rpc('dashboard_summary'),
+  const academicYearId = searchParams.academic_year_id || null;
+  const courseId = searchParams.course_id || null;
+  const classStandard = searchParams.class_standard || null;
+
+  const [
+    { data: summary, error: summaryError },
+    { data: recentReceipts },
+    { data: upcomingDue },
+    { data: years },
+    { data: courses }
+  ] = await Promise.all([
+    supabase.rpc('dashboard_summary', {
+      p_academic_year_id: academicYearId,
+      p_course_id: courseId,
+      p_class_standard: classStandard
+    }),
     supabase
       .from('receipts')
       .select('id, receipt_number, issued_at, status, payments(amount, students(name, student_code))')
@@ -27,7 +46,9 @@ export default async function DashboardPage() {
       .eq('org_id', session.orgId)
       .in('status', ['DUE', 'OVERDUE'])
       .order('due_date', { ascending: true })
-      .limit(8)
+      .limit(8),
+    supabase.from('academic_years').select('id,name').order('start_date', { ascending: false }),
+    supabase.from('courses').select('id,name,class_standard').eq('status', 'ACTIVE').order('name')
   ]);
 
   if (summaryError) {
@@ -36,6 +57,15 @@ export default async function DashboardPage() {
 
   const s = summary as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
+  const yearOptions = (years ?? []).map((y) => ({ value: y.id, label: y.name }));
+  const courseOptions = (courses ?? []).map((c) => ({ value: c.id, label: c.name }));
+  const classOptions = Array.from(new Set((courses ?? []).map((c) => c.class_standard).filter((v): v is string => !!v))).map((v) => ({
+    value: v,
+    label: v
+  }));
+
+  const collectionLabel = academicYearId || courseId || classStandard ? 'Filtered Collection' : "Current Academic Year Collection";
+
   return (
     <div className="space-y-6">
       <div>
@@ -43,10 +73,12 @@ export default async function DashboardPage() {
         <p className="text-sm text-slate-500">Welcome back, {session.profile.full_name.split(' ')[0]}.</p>
       </div>
 
+      <DashboardFilters years={yearOptions} courses={courseOptions} classes={classOptions} />
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Today's Collection" value={formatCurrency(s.today_collection)} tone="success" />
         <StatCard label="This Month's Collection" value={formatCurrency(s.month_collection)} tone="success" />
-        <StatCard label="Current Academic Year Collection" value={formatCurrency(s.year_collection)} />
+        <StatCard label={collectionLabel} value={formatCurrency(s.year_collection)} />
         <StatCard label="Total Outstanding" value={formatCurrency(s.total_outstanding)} tone="danger" />
         <StatCard label="Overdue Amount" value={formatCurrency(s.overdue_amount)} tone="danger" />
         <StatCard label="Students with Outstanding" value={String(s.students_with_outstanding)} />
@@ -54,8 +86,9 @@ export default async function DashboardPage() {
         <StatCard label="Active Students" value={String(s.total_students)} />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <BarList title="This Month's Collection by Payment Mode" items={(s.collection_by_mode ?? []).map((m: any) => ({ label: m.mode, amount: Number(m.amount) }))} /> {/* eslint-disable-line @typescript-eslint/no-explicit-any */}
+        <BarList title="This Month's Collection by Class" items={(s.collection_by_class ?? []).map((c: any) => ({ label: c.class, amount: Number(c.amount) }))} /> {/* eslint-disable-line @typescript-eslint/no-explicit-any */}
         <BarList title="This Month's Collection by Course" items={(s.collection_by_course ?? []).map((c: any) => ({ label: c.course, amount: Number(c.amount) }))} /> {/* eslint-disable-line @typescript-eslint/no-explicit-any */}
       </div>
 

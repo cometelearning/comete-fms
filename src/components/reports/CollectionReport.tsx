@@ -16,19 +16,19 @@ function today() {
 
 export function CollectionReport({
   courses,
-  batches,
+  classes,
   users,
   canExport
 }: {
   courses: FieldOption[];
-  batches: (FieldOption & { courseId: string })[];
+  classes: FieldOption[];
   users: FieldOption[];
   canExport: boolean;
 }) {
   const [from, setFrom] = useState(firstOfMonth());
   const [to, setTo] = useState(today());
   const [courseId, setCourseId] = useState('');
-  const [batchId, setBatchId] = useState('');
+  const [classStandard, setClassStandard] = useState('');
   const [mode, setMode] = useState('');
   const [createdBy, setCreatedBy] = useState('');
   const [rows, setRows] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -38,14 +38,12 @@ export function CollectionReport({
   const [loading, setLoading] = useState(true);
   const pageSize = 30;
 
-  const filteredBatches = courseId ? batches.filter((b) => b.courseId === courseId) : batches;
-
   function buildParams() {
     const params = new URLSearchParams();
     if (from) params.set('from', from);
     if (to) params.set('to', to);
     if (courseId) params.set('course_id', courseId);
-    if (batchId) params.set('batch_id', batchId);
+    if (classStandard) params.set('class_standard', classStandard);
     if (mode) params.set('payment_mode', mode);
     if (createdBy) params.set('created_by', createdBy);
     return params;
@@ -64,7 +62,7 @@ export function CollectionReport({
       })
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [from, to, courseId, batchId, mode, createdBy, page]);
+  }, [from, to, courseId, classStandard, mode, createdBy, page]);
 
   const totalPages = Math.max(1, Math.ceil(count / pageSize));
 
@@ -79,7 +77,7 @@ export function CollectionReport({
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Collection Report</h1>
-          <p className="text-sm text-slate-500">Filter by date, course, batch, payment mode or user to see daily, course-wise, batch-wise or user-wise collections.</p>
+          <p className="text-sm text-slate-500">Filter by date, class, course, payment mode or user to see daily, class-wise, course-wise or user-wise collections.</p>
         </div>
         {canExport && (
           <div className="flex gap-2">
@@ -100,20 +98,20 @@ export function CollectionReport({
           <input type="date" className="input" value={to} onChange={(e) => { setTo(e.target.value); setPage(1); }} />
         </div>
         <div>
-          <label className="label">Course</label>
-          <select className="input" value={courseId} onChange={(e) => { setCourseId(e.target.value); setBatchId(''); setPage(1); }}>
+          <label className="label">Class / Standard</label>
+          <select className="input" value={classStandard} onChange={(e) => { setClassStandard(e.target.value); setPage(1); }}>
             <option value="">All</option>
-            {courses.map((c) => (
+            {classes.map((c) => (
               <option key={c.value} value={c.value}>{c.label}</option>
             ))}
           </select>
         </div>
         <div>
-          <label className="label">Batch</label>
-          <select className="input" value={batchId} onChange={(e) => { setBatchId(e.target.value); setPage(1); }}>
+          <label className="label">Course</label>
+          <select className="input" value={courseId} onChange={(e) => { setCourseId(e.target.value); setPage(1); }}>
             <option value="">All</option>
-            {filteredBatches.map((b) => (
-              <option key={b.value} value={b.value}>{b.label}</option>
+            {courses.map((c) => (
+              <option key={c.value} value={c.value}>{c.label}</option>
             ))}
           </select>
         </div>
@@ -155,6 +153,7 @@ export function CollectionReport({
                 <th>Receipt No.</th>
                 <th>Student</th>
                 <th>Course</th>
+                <th>Class</th>
                 <th className="text-right">Amount</th>
                 <th>Mode</th>
                 <th>Collected By</th>
@@ -167,6 +166,7 @@ export function CollectionReport({
                   <td className="font-mono text-xs">{r.receipts?.receipt_number ?? r.receipts?.[0]?.receipt_number ?? '-'}</td>
                   <td>{r.students?.name}</td>
                   <td>{r.students?.courses?.name ?? '-'}</td>
+                  <td>{r.students?.courses?.class_standard ?? '-'}</td>
                   <td className="text-right">{formatCurrency(r.amount)}</td>
                   <td>{r.payment_mode?.replace('_', ' ')}</td>
                   <td>{r.profiles?.full_name ?? '-'}</td>

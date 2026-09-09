@@ -9,15 +9,15 @@ import type { FieldOption } from '@/components/masters/MasterCrudPage';
 interface Props {
   years: FieldOption[];
   courses: FieldOption[];
-  batches: (FieldOption & { courseId: string })[];
+  classes: FieldOption[];
   canExport: boolean;
 }
 
-export function OutstandingTable({ years, courses, batches, canExport }: Props) {
+export function OutstandingTable({ years, courses, classes, canExport }: Props) {
   const [q, setQ] = useState('');
   const [yearId, setYearId] = useState('');
   const [courseId, setCourseId] = useState('');
-  const [batchId, setBatchId] = useState('');
+  const [classStandard, setClassStandard] = useState('');
   const [overdueOnly, setOverdueOnly] = useState(false);
   const [rows, setRows] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [count, setCount] = useState(0);
@@ -25,14 +25,12 @@ export function OutstandingTable({ years, courses, batches, canExport }: Props) 
   const [loading, setLoading] = useState(true);
   const pageSize = 25;
 
-  const filteredBatches = courseId ? batches.filter((b) => b.courseId === courseId) : batches;
-
   function buildParams() {
     const params = new URLSearchParams();
     if (q) params.set('q', q);
     if (yearId) params.set('academic_year_id', yearId);
     if (courseId) params.set('course_id', courseId);
-    if (batchId) params.set('batch_id', batchId);
+    if (classStandard) params.set('class_standard', classStandard);
     if (overdueOnly) params.set('overdue_only', 'true');
     return params;
   }
@@ -52,7 +50,7 @@ export function OutstandingTable({ years, courses, batches, canExport }: Props) 
     }, 300);
     return () => clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, yearId, courseId, batchId, overdueOnly, page]);
+  }, [q, yearId, courseId, classStandard, overdueOnly, page]);
 
   const totalPages = Math.max(1, Math.ceil(count / pageSize));
   const totalOutstanding = rows.reduce((sum, r) => sum + Number(r.outstanding_total), 0);
@@ -95,7 +93,7 @@ export function OutstandingTable({ years, courses, batches, canExport }: Props) 
             </option>
           ))}
         </select>
-        <select className="input" value={courseId} onChange={(e) => { setCourseId(e.target.value); setBatchId(''); setPage(1); }}>
+        <select className="input" value={courseId} onChange={(e) => { setCourseId(e.target.value); setPage(1); }}>
           <option value="">All courses</option>
           {courses.map((c) => (
             <option key={c.value} value={c.value}>
@@ -103,11 +101,11 @@ export function OutstandingTable({ years, courses, batches, canExport }: Props) 
             </option>
           ))}
         </select>
-        <select className="input" value={batchId} onChange={(e) => { setBatchId(e.target.value); setPage(1); }}>
-          <option value="">All batches</option>
-          {filteredBatches.map((b) => (
-            <option key={b.value} value={b.value}>
-              {b.label}
+        <select className="input" value={classStandard} onChange={(e) => { setClassStandard(e.target.value); setPage(1); }}>
+          <option value="">All classes</option>
+          {classes.map((c) => (
+            <option key={c.value} value={c.value}>
+              {c.label}
             </option>
           ))}
         </select>
@@ -129,7 +127,7 @@ export function OutstandingTable({ years, courses, batches, canExport }: Props) 
                 <th>Student</th>
                 <th>Mobile</th>
                 <th>Course</th>
-                <th>Batch</th>
+                <th>Class</th>
                 <th className="text-right">Total</th>
                 <th className="text-right">Paid</th>
                 <th className="text-right">Outstanding</th>
@@ -148,7 +146,7 @@ export function OutstandingTable({ years, courses, batches, canExport }: Props) 
                   </td>
                   <td>{r.students?.student_mobile ?? r.students?.parent_mobile ?? '-'}</td>
                   <td>{r.students?.courses?.name ?? '-'}</td>
-                  <td>{r.students?.batches?.name ?? '-'}</td>
+                  <td>{r.students?.courses?.class_standard ?? '-'}</td>
                   <td className="text-right">{formatCurrency(r.total_fee)}</td>
                   <td className="text-right text-emerald-700">{formatCurrency(r.paid_total)}</td>
                   <td className="text-right font-semibold text-red-700">{formatCurrency(r.outstanding_total)}</td>

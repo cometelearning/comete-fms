@@ -16,9 +16,8 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
   const { data: student } = await supabase.from('students').select('*').eq('id', params.id).eq('org_id', session.orgId).single();
   if (!student) notFound();
 
-  const [{ data: course }, { data: batch }, { data: year }, { data: feeSummaries }, { data: availableStructures }] = await Promise.all([
+  const [{ data: course }, { data: year }, { data: feeSummaries }, { data: availableStructures }] = await Promise.all([
     student.course_id ? supabase.from('courses').select('name').eq('id', student.course_id).single() : Promise.resolve({ data: null }),
-    student.batch_id ? supabase.from('batches').select('name').eq('id', student.batch_id).single() : Promise.resolve({ data: null }),
     student.academic_year_id ? supabase.from('academic_years').select('name').eq('id', student.academic_year_id).single() : Promise.resolve({ data: null }),
     supabase.from('student_fee_summary').select('*, fee_structures(name)').eq('student_id', params.id),
     session.permissions.has('student_fees.write')
@@ -36,7 +35,7 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
           <p className="font-mono text-xs text-slate-400">{student.student_code}</p>
           <h1 className="text-xl font-semibold text-slate-900">{student.name}</h1>
           <p className="text-sm text-slate-500">
-            {[course?.name, batch?.name, year?.name].filter(Boolean).join(' · ') || 'No course/batch assigned'}
+            {[course?.name, year?.name].filter(Boolean).join(' · ') || 'No course/class assigned'}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

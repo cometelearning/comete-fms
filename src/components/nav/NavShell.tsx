@@ -28,8 +28,7 @@ const NAV_ITEMS: NavItem[] = [
     permission: 'masters.read',
     children: [
       { href: '/academic-years', label: 'Academic Years', permission: 'masters.read' },
-      { href: '/courses', label: 'Courses', permission: 'masters.read' },
-      { href: '/batches', label: 'Batches', permission: 'masters.read' },
+      { href: '/courses', label: 'Courses / Classes', permission: 'masters.read' },
       { href: '/fee-heads', label: 'Fee Heads', permission: 'masters.read' }
     ]
   },
@@ -64,7 +63,7 @@ export function NavShell({
   }));
   const isWithin = (href: string) => pathname === href || pathname?.startsWith(href + '/');
   const [mastersOpen, setMastersOpen] = useState(() =>
-    ['/academic-years', '/courses', '/batches', '/fee-heads'].some((h) => isWithin(h))
+    ['/academic-years', '/courses', '/fee-heads'].some((h) => isWithin(h))
   );
 
   async function signOut() {

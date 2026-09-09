@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { requirePermission } from '@/lib/auth/session';
 import { apiError } from '@/lib/api/handler';
 import { buildCollectionQuery } from '@/lib/reports/collectionQuery';
+import { resolveClassToCourseIds } from '@/lib/reports/classFilter';
 
 export const runtime = 'nodejs';
 const PAGE_SIZE = 30;
@@ -13,6 +14,7 @@ export async function GET(request: Request) {
     const supabase = createClient();
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, Number(searchParams.get('page') ?? '1'));
+    const courseIds = await resolveClassToCourseIds(supabase, session.orgId, searchParams.get('class_standard'));
 
     const query = buildCollectionQuery(
       supabase,
@@ -21,7 +23,7 @@ export async function GET(request: Request) {
         from: searchParams.get('from'),
         to: searchParams.get('to'),
         courseId: searchParams.get('course_id'),
-        batchId: searchParams.get('batch_id'),
+        courseIds,
         paymentMode: searchParams.get('payment_mode'),
         createdBy: searchParams.get('created_by')
       },
@@ -37,7 +39,7 @@ export async function GET(request: Request) {
       from: searchParams.get('from'),
       to: searchParams.get('to'),
       courseId: searchParams.get('course_id'),
-      batchId: searchParams.get('batch_id'),
+      courseIds,
       paymentMode: searchParams.get('payment_mode'),
       createdBy: searchParams.get('created_by')
     }).select('amount');

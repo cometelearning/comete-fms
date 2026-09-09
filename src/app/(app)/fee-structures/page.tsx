@@ -12,7 +12,7 @@ export default async function FeeStructuresPage() {
   const supabase = createClient();
   const { data: structures } = await supabase
     .from('fee_structures')
-    .select('*, academic_years(name), courses(name), batches(name)')
+    .select('*, academic_years(name), courses(name)')
     .eq('org_id', session.orgId)
     .order('created_at', { ascending: false });
 
@@ -21,7 +21,7 @@ export default async function FeeStructuresPage() {
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Fee Structures</h1>
-          <p className="text-sm text-slate-500">Reusable fee plans with an installment schedule, per course/batch/academic year.</p>
+          <p className="text-sm text-slate-500">Reusable fee plans with an installment schedule, per course/academic year.</p>
         </div>
         {session.permissions.has('fee_structures.write') && (
           <Link href="/fee-structures/new" className="btn-primary">
@@ -40,7 +40,6 @@ export default async function FeeStructuresPage() {
                 <th>Name</th>
                 <th>Academic Year</th>
                 <th>Course</th>
-                <th>Batch</th>
                 <th className="text-right">Total Fee</th>
                 <th>Status</th>
                 <th></th>
@@ -52,7 +51,6 @@ export default async function FeeStructuresPage() {
                   <td className="font-medium text-slate-900">{s.name}</td>
                   <td>{s.academic_years?.name}</td>
                   <td>{s.courses?.name}</td>
-                  <td>{s.batches?.name ?? 'Whole course'}</td>
                   <td className="text-right">{formatCurrency(s.total_fee)}</td>
                   <td>
                     <Badge status={s.status} />

@@ -12,7 +12,7 @@ export default async function FeeStructureDetailPage({ params }: { params: { id:
   const { data: structure } = await supabase
     .from('fee_structures')
     .select(
-      '*, academic_years(name), courses(name), batches(name), fee_structure_items(*, fee_heads(name)), fee_structure_installments(*)'
+      '*, academic_years(name), courses(name), fee_structure_items(*, fee_heads(name)), fee_structure_installments(*)'
     )
     .eq('id', params.id)
     .eq('org_id', session.orgId)
@@ -29,7 +29,7 @@ export default async function FeeStructureDetailPage({ params }: { params: { id:
         <div>
           <h1 className="text-xl font-semibold text-slate-900">{structure.name}</h1>
           <p className="text-sm text-slate-500">
-            {structure.academic_years?.name} · {structure.courses?.name} · {structure.batches?.name ?? 'Whole course'}
+            {structure.academic_years?.name} · {structure.courses?.name}
           </p>
         </div>
         <Badge status={structure.status} />

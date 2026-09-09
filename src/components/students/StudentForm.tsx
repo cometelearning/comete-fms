@@ -4,17 +4,10 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { FieldOption } from '@/components/masters/MasterCrudPage';
 
-interface BatchOption {
-  value: string;
-  label: string;
-  courseId: string;
-}
-
 interface Props {
   mode: 'create' | 'edit';
   studentId?: string;
   courses: FieldOption[];
-  batches: BatchOption[];
   years: FieldOption[];
   initial?: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
@@ -29,13 +22,12 @@ const emptyForm = {
   parent_email: '',
   address: '',
   course_id: '',
-  batch_id: '',
   academic_year_id: '',
   admission_date: new Date().toISOString().slice(0, 10),
   remarks: ''
 };
 
-export function StudentForm({ mode, studentId, courses, batches, years, initial }: Props) {
+export function StudentForm({ mode, studentId, courses, years, initial }: Props) {
   const router = useRouter();
   const [form, setForm] = useState<Record<string, any>>({ ...emptyForm, ...initial }); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [saving, setSaving] = useState(false);
@@ -64,8 +56,6 @@ export function StudentForm({ mode, studentId, courses, batches, years, initial 
       setSaving(false);
     }
   }
-
-  const filteredBatches = form.course_id ? batches.filter((b) => b.courseId === form.course_id) : batches;
 
   return (
     <form onSubmit={submit} className="card space-y-6 p-6">
@@ -109,7 +99,7 @@ export function StudentForm({ mode, studentId, courses, batches, years, initial 
         </div>
       </fieldset>
 
-      <fieldset className="grid grid-cols-1 gap-4 border-t border-slate-100 pt-4 sm:grid-cols-3">
+      <fieldset className="grid grid-cols-1 gap-4 border-t border-slate-100 pt-4 sm:grid-cols-2">
         <legend className="mb-2 text-sm font-semibold text-slate-800">Academic placement</legend>
         <div>
           <label className="label">Academic Year</label>
@@ -129,17 +119,6 @@ export function StudentForm({ mode, studentId, courses, batches, years, initial 
             {courses.map((c) => (
               <option key={c.value} value={c.value}>
                 {c.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="label">Batch</label>
-          <select className="input" value={form.batch_id} onChange={(e) => update('batch_id', e.target.value)}>
-            <option value="">Select…</option>
-            {filteredBatches.map((b) => (
-              <option key={b.value} value={b.value}>
-                {b.label}
               </option>
             ))}
           </select>

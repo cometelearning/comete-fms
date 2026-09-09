@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { requirePermission } from '@/lib/auth/session';
 import { apiError } from '@/lib/api/handler';
 import { buildOutstandingQuery } from '@/lib/reports/outstandingQuery';
+import { resolveClassToCourseIds } from '@/lib/reports/classFilter';
 import { toCsv, toXlsx, type ExportColumn } from '@/lib/export/tabular';
 import { generateTablePdf, type TableColumn } from '@/lib/pdf/table';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
@@ -18,11 +19,13 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const format = (searchParams.get('format') ?? 'csv') as 'csv' | 'xlsx' | 'pdf';
 
+    const courseIds = await resolveClassToCourseIds(supabase, session.orgId, searchParams.get('class_standard'));
+
     const query = buildOutstandingQuery(supabase, {
       orgId: session.orgId,
       academicYearId: searchParams.get('academic_year_id'),
       courseId: searchParams.get('course_id'),
-      batchId: searchParams.get('batch_id'),
+      courseIds,
       q: searchParams.get('q'),
       overdueOnly: searchParams.get('overdue_only') === 'true',
       minAmount: searchParams.get('min_amount') ? Number(searchParams.get('min_amount')) : null
@@ -36,7 +39,7 @@ export async function GET(request: Request) {
       student_code: r.students?.student_code,
       mobile: r.students?.student_mobile ?? r.students?.parent_mobile ?? '',
       course: r.students?.courses?.name ?? '',
-      batch: r.students?.batches?.name ?? '',
+      class: r.students?.courses?.class_standard ?? '',
       academic_year: r.academic_years?.name ?? '',
       total_fee: Number(r.total_fee).toFixed(2),
       discount: Number(r.discount_total).toFixed(2),
@@ -55,7 +58,7 @@ export async function GET(request: Request) {
         { key: 'student_code', label: 'Student ID', width: 16 },
         { key: 'mobile', label: 'Mobile', width: 14 },
         { key: 'course', label: 'Course', width: 18 },
-        { key: 'batch', label: 'Batch', width: 16 },
+        { key: 'class', label: 'Class', width: 16 },
         { key: 'academic_year', label: 'Academic Year', width: 14 },
         { key: 'total_fee', label: 'Total Fee', width: 12 },
         { key: 'discount', label: 'Discount', width: 12 },
@@ -78,7 +81,7 @@ export async function GET(request: Request) {
       const columns: TableColumn[] = [
         { key: 'student_name', label: 'Student', width: 130 },
         { key: 'course', label: 'Course', width: 110 },
-        { key: 'batch', label: 'Batch', width: 90 },
+        { key: 'class', label: 'Class', width: 90 },
         { key: 'total_fee', label: 'Total', width: 70, align: 'right' },
         { key: 'paid', label: 'Paid', width: 70, align: 'right' },
         { key: 'outstanding', label: 'Outstanding', width: 80, align: 'right' },
@@ -109,7 +112,7 @@ export async function GET(request: Request) {
       { key: 'student_code', label: 'Student ID' },
       { key: 'mobile', label: 'Mobile' },
       { key: 'course', label: 'Course' },
-      { key: 'batch', label: 'Batch' },
+      { key: 'class', label: 'Class' },
       { key: 'academic_year', label: 'Academic Year' },
       { key: 'total_fee', label: 'Total Fee' },
       { key: 'discount', label: 'Discount' },

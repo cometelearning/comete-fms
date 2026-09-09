@@ -8,9 +8,8 @@ export default async function NewStudentPage() {
   if (!session || !session.permissions.has('students.write')) redirect('/students');
 
   const supabase = createClient();
-  const [{ data: courses }, { data: batches }, { data: years }] = await Promise.all([
+  const [{ data: courses }, { data: years }] = await Promise.all([
     supabase.from('courses').select('id,name').eq('status', 'ACTIVE').order('name'),
-    supabase.from('batches').select('id,name,course_id').eq('status', 'ACTIVE').order('name'),
     supabase.from('academic_years').select('id,name').order('start_date', { ascending: false })
   ]);
 
@@ -20,7 +19,6 @@ export default async function NewStudentPage() {
       <StudentForm
         mode="create"
         courses={(courses ?? []).map((c) => ({ value: c.id, label: c.name }))}
-        batches={(batches ?? []).map((b) => ({ value: b.id, label: b.name, courseId: b.course_id }))}
         years={(years ?? []).map((y) => ({ value: y.id, label: y.name }))}
       />
     </div>
