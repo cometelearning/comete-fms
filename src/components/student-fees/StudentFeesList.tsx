@@ -77,7 +77,7 @@ export function StudentFeesList() {
             <thead>
               <tr>
                 <th>Student</th>
-                <th>Fee Structure</th>
+                <th>Fee</th>
                 <th>Academic Year</th>
                 <th className="text-right">Total</th>
                 <th className="text-right">Paid</th>

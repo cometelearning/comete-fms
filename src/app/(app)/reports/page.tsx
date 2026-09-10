@@ -7,8 +7,9 @@ export default async function ReportsHubPage() {
   if (!session || !session.permissions.has('reports.view')) redirect('/dashboard');
 
   const cards = [
-    { href: '/reports/collection', title: 'Collection Reports', desc: 'Daily, date-wise, course-wise, batch-wise, payment-mode-wise and user-wise collection.' },
-    { href: '/outstanding', title: 'Outstanding Reports', desc: 'Student-wise, course-wise and batch-wise outstanding, overdue, due this week/month.' },
+    { href: '/reports/students', title: 'Student Record', desc: 'Every student with a live fee summary, filterable by academic year, class and course.' },
+    { href: '/reports/collection', title: 'Collection Reports', desc: 'Daily, date-wise, course-wise, class-wise, payment-mode-wise and user-wise collection.' },
+    { href: '/outstanding', title: 'Outstanding Reports', desc: 'Student-wise, course-wise and class-wise outstanding, overdue, due this week/month.' },
     { href: '/receipts', title: 'Receipt Register', desc: 'Every receipt issued, including cancelled receipts.' },
     { href: '/receipts?status=CANCELLED', title: 'Cancelled Receipts', desc: 'Receipts that were cancelled, with reasons and who cancelled them.' },
     { href: '/reports/discounts', title: 'Discount Register', desc: 'Every discount/concession/waiver granted or reversed, and by whom.' }

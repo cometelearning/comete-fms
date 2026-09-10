@@ -30,6 +30,14 @@ export interface Database {
         Args: { p_student_id: string; p_fee_structure_id: string };
         Returns: string;
       };
+      create_student_fee: {
+        Args: { p_student_id: string; p_items: AnyRow[]; p_installments: AnyRow[] };
+        Returns: string;
+      };
+      update_student_fee: {
+        Args: { p_student_fee_account_id: string; p_items: AnyRow[]; p_installments: AnyRow[] };
+        Returns: string;
+      };
       record_payment: {
         Args: {
           p_student_fee_account_id: string;

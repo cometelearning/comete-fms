@@ -37,15 +37,26 @@ export async function GET(request: Request) {
   }
 }
 
+const itemSchema = z.object({ fee_head_id: z.string().uuid(), amount: z.number().positive() });
+const installmentSchema = z.object({
+  seq_no: z.number().int().positive(),
+  label: z.string().min(1),
+  amount: z.number().positive(),
+  due_date: z.string()
+});
+
 const schema = z.object({
   student_id: z.string().uuid(),
-  fee_structure_id: z.string().uuid()
+  items: z.array(itemSchema).min(1),
+  installments: z.array(installmentSchema).min(1)
 });
 
 /**
- * Assigns a fee structure to a student. All the work (creating the fee
- * account + generating the installment schedule + audit log) happens inside
- * the assign_fee_to_student() Postgres function as one transaction.
+ * Enters a fee directly for a student - no separate reusable "Fee
+ * Structure" step. All the work (the fee record, its fee-head breakdown,
+ * its installment schedule, the student's fee account, and the audit log)
+ * happens inside the create_student_fee() Postgres function as one
+ * transaction.
  */
 export async function POST(request: Request) {
   try {
@@ -53,9 +64,10 @@ export async function POST(request: Request) {
     const body = schema.parse(await request.json());
     const supabase = createClient();
 
-    const { data, error } = await supabase.rpc('assign_fee_to_student', {
+    const { data, error } = await supabase.rpc('create_student_fee', {
       p_student_id: body.student_id,
-      p_fee_structure_id: body.fee_structure_id
+      p_items: body.items,
+      p_installments: body.installments
     });
     if (error) throw error;
 

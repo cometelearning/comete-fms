@@ -4,7 +4,7 @@ import { getSession } from '@/lib/auth/session';
 import { createClient } from '@/lib/supabase/server';
 import { Badge } from '@/components/ui/Badge';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
-import { AssignFeeButton } from '@/components/students/AssignFeeButton';
+import { FeeAccountDialog } from '@/components/students/FeeAccountDialog';
 import { GrantDiscountButton } from '@/components/students/GrantDiscountButton';
 
 export default async function StudentDetailPage({ params }: { params: { id: string } }) {
@@ -16,17 +16,15 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
   const { data: student } = await supabase.from('students').select('*').eq('id', params.id).eq('org_id', session.orgId).single();
   if (!student) notFound();
 
-  const [{ data: course }, { data: year }, { data: feeSummaries }, { data: availableStructures }] = await Promise.all([
+  const canEnterFee = session.permissions.has('student_fees.write');
+  const [{ data: course }, { data: year }, { data: feeSummaries }, feeHeadsResult] = await Promise.all([
     student.course_id ? supabase.from('courses').select('name').eq('id', student.course_id).single() : Promise.resolve({ data: null }),
     student.academic_year_id ? supabase.from('academic_years').select('name').eq('id', student.academic_year_id).single() : Promise.resolve({ data: null }),
     supabase.from('student_fee_summary').select('*, fee_structures(name)').eq('student_id', params.id),
-    session.permissions.has('student_fees.write')
-      ? supabase.from('fee_structures').select('id,name,total_fee').eq('status', 'ACTIVE').eq('org_id', session.orgId)
-      : Promise.resolve({ data: [] })
+    canEnterFee ? supabase.from('fee_heads').select('id,name').eq('status', 'ACTIVE').eq('org_id', session.orgId) : Promise.resolve({ data: null })
   ]);
 
-  const assignedStructureIds = new Set((feeSummaries ?? []).map((f: any) => f.fee_structure_id)); // eslint-disable-line @typescript-eslint/no-explicit-any
-  const assignableStructures = (availableStructures ?? []).filter((s) => !assignedStructureIds.has(s.id));
+  const feeHeadOptions = (feeHeadsResult.data ?? []).map((f) => ({ value: f.id, label: f.name }));
 
   return (
     <div className="space-y-6">
@@ -73,22 +71,28 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
       <div>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-900">Fee Accounts</h2>
-          {session.permissions.has('student_fees.write') && assignableStructures.length > 0 && (
-            <AssignFeeButton studentId={student.id} structures={assignableStructures} />
+          {canEnterFee && (
+            <FeeAccountDialog
+              studentId={student.id}
+              feeHeads={feeHeadOptions}
+              admissionDate={student.admission_date}
+              buttonLabel="+ Add Fee"
+              buttonClassName="btn-primary"
+            />
           )}
         </div>
 
         {(feeSummaries ?? []).length === 0 ? (
           <div className="card p-6 text-sm text-slate-500">
-            No fee structure assigned yet.
-            {session.permissions.has('student_fees.write') && ' Use "Assign Fee Structure" to create one.'}
+            No fee entered yet.
+            {canEnterFee && ' Use "Add Fee" to enter one.'}
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {(feeSummaries ?? []).map((f: any) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
               <div key={f.student_fee_account_id} className="card p-5">
                 <div className="mb-3 flex items-center justify-between">
-                  <p className="font-semibold text-slate-800">{f.fee_structures?.name ?? 'Fee Structure'}</p>
+                  <p className="font-semibold text-slate-800">{f.fee_structures?.name ?? 'Fee'}</p>
                   <Badge status={f.overall_status} />
                 </div>
                 <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
@@ -104,11 +108,20 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
                     Next due: {formatCurrency(f.next_due_amount)} on {formatDate(f.next_due_date)}
                   </p>
                 )}
-                {session.permissions.has('discounts.grant') && (
-                  <div className="mt-3 border-t border-slate-100 pt-3">
-                    <GrantDiscountButton accountId={f.student_fee_account_id} />
+                {(canEnterFee && Number(f.paid_total) === 0) || session.permissions.has('discounts.grant') ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-3">
+                    {canEnterFee && Number(f.paid_total) === 0 && (
+                      <FeeAccountDialog
+                        accountId={f.student_fee_account_id}
+                        feeHeads={feeHeadOptions}
+                        admissionDate={student.admission_date}
+                        buttonLabel="Edit Fee"
+                        buttonClassName="btn-ghost px-2 py-1 text-xs"
+                      />
+                    )}
+                    {session.permissions.has('discounts.grant') && <GrantDiscountButton accountId={f.student_fee_account_id} />}
                   </div>
-                )}
+                ) : null}
               </div>
             ))}
           </div>

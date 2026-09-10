@@ -8,9 +8,13 @@ export default async function NewStudentPage() {
   if (!session || !session.permissions.has('students.write')) redirect('/students');
 
   const supabase = createClient();
-  const [{ data: courses }, { data: years }] = await Promise.all([
+  const canEnterFee = session.permissions.has('student_fees.write');
+  const [{ data: courses }, { data: years }, feeHeadsResult] = await Promise.all([
     supabase.from('courses').select('id,name').eq('status', 'ACTIVE').order('name'),
-    supabase.from('academic_years').select('id,name').order('start_date', { ascending: false })
+    supabase.from('academic_years').select('id,name').order('start_date', { ascending: false }),
+    canEnterFee
+      ? supabase.from('fee_heads').select('id,name').eq('status', 'ACTIVE').order('name')
+      : Promise.resolve({ data: null })
   ]);
 
   return (
@@ -20,6 +24,7 @@ export default async function NewStudentPage() {
         mode="create"
         courses={(courses ?? []).map((c) => ({ value: c.id, label: c.name }))}
         years={(years ?? []).map((y) => ({ value: y.id, label: y.name }))}
+        feeHeads={canEnterFee ? (feeHeadsResult.data ?? []).map((f) => ({ value: f.id, label: f.name })) : undefined}
       />
     </div>
   );

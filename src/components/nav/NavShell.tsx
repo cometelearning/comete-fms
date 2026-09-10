@@ -32,7 +32,6 @@ const NAV_ITEMS: NavItem[] = [
       { href: '/fee-heads', label: 'Fee Heads', permission: 'masters.read' }
     ]
   },
-  { href: '/fee-structures', label: 'Fee Structures', permission: 'fee_structures.read' },
   { href: '/student-fees', label: 'Student Fees', permission: 'student_fees.read' },
   { href: '/collect-fee', label: 'Collect Fee', permission: 'payments.collect' },
   { href: '/receipts', label: 'Receipts', permission: 'receipts.read' },
