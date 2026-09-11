@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { ChangePasswordDialog } from '@/components/users/ChangePasswordDialog';
 import type { Permission } from '@/lib/types/domain';
 
 interface NavItem {
@@ -165,7 +166,8 @@ export function NavShell({
         <div className="absolute bottom-0 left-0 right-0 border-t border-slate-100 p-4">
           <p className="truncate text-sm font-medium text-slate-800">{fullName}</p>
           <p className="text-xs text-slate-400">{roleName}</p>
-          <button onClick={signOut} className="btn-ghost mt-2 w-full justify-start px-0 text-sm text-red-600 hover:bg-transparent">
+          <ChangePasswordDialog />
+          <button onClick={signOut} className="btn-ghost mt-1 w-full justify-start px-0 text-sm text-red-600 hover:bg-transparent">
             Sign out
           </button>
         </div>

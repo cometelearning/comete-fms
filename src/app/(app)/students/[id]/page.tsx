@@ -19,11 +19,14 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
 
   const canEnterFee = session.permissions.has('student_fees.write');
   const canWritePtm = session.permissions.has('students.write');
-  const [{ data: course }, { data: year }, { data: batch }, { data: branch }, { data: board }, { data: feeSummaries }, feeHeadsResult, { data: ptmRecords }] =
+  const [{ data: course }, { data: studentClass }, { data: year }, { data: batch }, { data: branch }, { data: board }, { data: feeSummaries }, feeHeadsResult, { data: ptmRecords }] =
     await Promise.all([
-      student.course_id
-        ? supabase.from('courses').select('name,class_standard').eq('id', student.course_id).single()
-        : Promise.resolve({ data: null }),
+      student.course_id ? supabase.from('courses').select('name').eq('id', student.course_id).single() : Promise.resolve({ data: null }),
+      // The student's own Class (migration 0018) - never read this off the
+      // course. A course can be tagged to more than one Class, so
+      // `courses.class_standard` can only say which classes a course is
+      // OFFERED under, not which one this particular student is in.
+      student.class_id ? supabase.from('classes').select('name').eq('id', student.class_id).single() : Promise.resolve({ data: null }),
       student.academic_year_id ? supabase.from('academic_years').select('name').eq('id', student.academic_year_id).single() : Promise.resolve({ data: null }),
       student.batch_id ? supabase.from('batches').select('name').eq('id', student.batch_id).single() : Promise.resolve({ data: null }),
       student.branch_id ? supabase.from('branches').select('name').eq('id', student.branch_id).single() : Promise.resolve({ data: null }),
@@ -76,7 +79,7 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
         <Info label="Admission Date" value={formatDate(student.admission_date)} />
         <Info label="Date of Birth" value={student.date_of_birth ? formatDate(student.date_of_birth) : null} />
         <Info label="Academic Year" value={year?.name} />
-        <Info label="Class" value={course?.class_standard} />
+        <Info label="Class" value={studentClass?.name} />
         <Info label="Course" value={course?.name} />
         <Info label="Batch" value={batch?.name} />
         <Info label="Branch" value={branch?.name} />

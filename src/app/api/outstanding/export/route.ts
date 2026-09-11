@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server';
 import { requirePermission } from '@/lib/auth/session';
 import { apiError } from '@/lib/api/handler';
 import { buildOutstandingQuery } from '@/lib/reports/outstandingQuery';
-import { resolveClassToCourseIds } from '@/lib/reports/classFilter';
 import { toCsv, toXlsx, type ExportColumn } from '@/lib/export/tabular';
 import { generateTablePdf, type TableColumn } from '@/lib/pdf/table';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
@@ -19,13 +18,11 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const format = (searchParams.get('format') ?? 'csv') as 'csv' | 'xlsx' | 'pdf';
 
-    const courseIds = await resolveClassToCourseIds(supabase, session.orgId, searchParams.get('class_id'));
-
     const query = buildOutstandingQuery(supabase, {
       orgId: session.orgId,
       academicYearId: searchParams.get('academic_year_id'),
       courseId: searchParams.get('course_id'),
-      courseIds,
+      classId: searchParams.get('class_id'),
       q: searchParams.get('q'),
       overdueOnly: searchParams.get('overdue_only') === 'true',
       minAmount: searchParams.get('min_amount') ? Number(searchParams.get('min_amount')) : null
@@ -39,7 +36,7 @@ export async function GET(request: Request) {
       student_code: r.students?.student_code,
       mobile: r.students?.student_mobile ?? r.students?.parent_mobile ?? '',
       course: r.students?.courses?.name ?? '',
-      class: r.students?.courses?.class_standard ?? '',
+      class: r.students?.classes?.name ?? '',
       academic_year: r.academic_years?.name ?? '',
       total_fee: Number(r.total_fee).toFixed(2),
       discount: Number(r.discount_total).toFixed(2),

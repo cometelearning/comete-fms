@@ -30,6 +30,10 @@ export async function GET(_request: Request, { params }: { params: { id: string 
 // here. The Edit Student form always submits the full form, so this mirrors
 // the insert schema rather than being a true partial update; `status` is
 // the one exception (not a field on the form today).
+//
+// class_id IS part of this schema (migration 0018) for the same reason it's
+// in the insert schema - see the comment there. It's mandatory here too,
+// same as course_id/academic_year_id/etc.
 const updateSchema = z.object({
   name: z.string().min(2),
   guardian_name: z.string().min(1),
@@ -43,6 +47,7 @@ const updateSchema = z.object({
   landmark: z.string().optional().nullable(),
   pincode: z.string().regex(/^\d{6}$/, 'PIN code must be 6 digits'),
   district: z.string().min(1),
+  class_id: z.string().uuid(),
   course_id: z.string().uuid(),
   batch_id: z.string().uuid(),
   academic_year_id: z.string().uuid(),

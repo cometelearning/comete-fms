@@ -2,26 +2,25 @@ import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
- * Report/outstanding filters accept a `class_id` query param, but the
- * underlying queries filter on payments/student_fee_summary joined to
- * `students`, which only carries `course_id` - not class directly.
- * PostgREST can't reliably filter two embedded joins deep (payments ->
- * students -> courses -> course_classes), so instead we resolve the class
- * to the set of matching course ids here (via the course_classes join
- * table, migration 0016 - a course can now be tagged to more than one
- * class), then the caller filters `students.course_id in (...)`.
+ * DEPRECATED as of migration 0018 - no longer called anywhere in the app.
+ * Safe to delete this file.
  *
- * Returns null when no class filter was requested (meaning: don't restrict
- * by course at all), or an array of course ids (possibly empty, meaning: no
- * course is tagged to this class, so the result set should be empty)
- * otherwise.
+ * This existed because Collection/Outstanding/Student Record's class filter
+ * used to resolve a class to the set of course ids tagged to it (via
+ * course_classes, migration 0016), then filter `students.course_id in
+ * (...)`. That was already an approximation: it matched every student on a
+ * course tagged to the filtered class, even a student who was actually in a
+ * *different* class the same course happens to also be tagged to.
  *
- * Note: the Dashboard's class filter does NOT go through this helper - it
- * filters via the separate dashboard_summary() RPC (migration 0009, filter
- * params added by 0017), which now does its own equivalent course_classes
- * match directly in SQL (an EXISTS against course_classes by class_id)
- * rather than resolving ids here first. Both mechanisms rely on the same
- * join table and are equivalent in effect.
+ * Migration 0018 fixed the root cause by giving each student their own
+ * `class_id` (a student's Class was previously only inferable from their
+ * course, which broke once a course could be tagged to more than one
+ * class). Every class filter - Collection Report, Outstanding, Student
+ * Record report, and the Dashboard - now filters `students.class_id`
+ * directly, correctly and more simply, with no join through course_classes
+ * needed at all. See `collectionQuery.ts` / `outstandingQuery.ts` /
+ * `studentRecordQuery.ts` (a plain `classId` filter) and `dashboard_summary()`
+ * (migration 0018, `p_class_id` now matches `s.class_id` directly).
  */
 export async function resolveClassToCourseIds(
   supabase: SupabaseClient,

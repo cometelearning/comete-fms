@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server';
 import { requirePermission } from '@/lib/auth/session';
 import { apiError } from '@/lib/api/handler';
 import { buildCollectionQuery } from '@/lib/reports/collectionQuery';
-import { resolveClassToCourseIds } from '@/lib/reports/classFilter';
 import { toCsv, toXlsx, type ExportColumn } from '@/lib/export/tabular';
 import { generateTablePdf, type TableColumn } from '@/lib/pdf/table';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
@@ -18,14 +17,12 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const format = (searchParams.get('format') ?? 'csv') as 'csv' | 'xlsx' | 'pdf';
 
-    const courseIds = await resolveClassToCourseIds(supabase, session.orgId, searchParams.get('class_id'));
-
     const query = buildCollectionQuery(supabase, {
       orgId: session.orgId,
       from: searchParams.get('from'),
       to: searchParams.get('to'),
       courseId: searchParams.get('course_id'),
-      courseIds,
+      classId: searchParams.get('class_id'),
       paymentMode: searchParams.get('payment_mode'),
       createdBy: searchParams.get('created_by')
     });
@@ -39,7 +36,7 @@ export async function GET(request: Request) {
       student: p.students?.name,
       student_code: p.students?.student_code,
       course: p.students?.courses?.name ?? '',
-      class: p.students?.courses?.class_standard ?? '',
+      class: p.students?.classes?.name ?? '',
       amount: Number(p.amount).toFixed(2),
       mode: p.payment_mode,
       reference: p.reference_number ?? '',

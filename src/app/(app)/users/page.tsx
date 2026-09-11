@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth/session';
 import { createClient } from '@/lib/supabase/server';
-import { UsersManager } from '@/components/users/UsersManager';
+import { UsersPageTabs } from '@/components/users/UsersPageTabs';
 
 export default async function UsersPage() {
   const session = await getSession();
@@ -10,5 +10,5 @@ export default async function UsersPage() {
   const supabase = createClient();
   const { data: roles } = await supabase.from('roles').select('id,name').eq('org_id', session.orgId).order('name');
 
-  return <UsersManager roles={roles ?? []} currentUserId={session.userId} />;
+  return <UsersPageTabs roles={roles ?? []} currentUserId={session.userId} />;
 }

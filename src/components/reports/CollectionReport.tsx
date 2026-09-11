@@ -166,7 +166,7 @@ export function CollectionReport({
                   <td className="font-mono text-xs">{r.receipts?.receipt_number ?? r.receipts?.[0]?.receipt_number ?? '-'}</td>
                   <td>{r.students?.name}</td>
                   <td>{r.students?.courses?.name ?? '-'}</td>
-                  <td>{r.students?.courses?.class_standard ?? '-'}</td>
+                  <td>{r.students?.classes?.name ?? '-'}</td>
                   <td className="text-right">{formatCurrency(r.amount)}</td>
                   <td>{r.payment_mode?.replace('_', ' ')}</td>
                   <td>{r.profiles?.full_name ?? '-'}</td>

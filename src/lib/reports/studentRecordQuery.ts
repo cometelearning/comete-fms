@@ -5,7 +5,7 @@ export interface StudentRecordFilters {
   orgId: string;
   academicYearId?: string | null;
   courseId?: string | null;
-  courseIds?: string[] | null; // resolved from a class/standard filter - see classFilter.ts
+  classId?: string | null; // the student's own Class (students.class_id, migration 0018)
   branchId?: string | null;
   batchId?: string | null;
   boardId?: string | null;
@@ -13,19 +13,19 @@ export interface StudentRecordFilters {
   q?: string | null;
 }
 
+// Class comes from students.class_id directly, not from the course - a
+// course can be tagged to more than one Class (migration 0016), so
+// `courses.class_standard` can only say which classes a course is offered
+// under, not which one this particular student is in (migration 0018).
 const SELECT =
-  'id, student_code, admission_number, name, student_mobile, parent_mobile, status, academic_year_id, course_id, branch_id, batch_id, board_id, courses(name, class_standard), academic_years(name), branches(name), batches(name), boards(name)';
+  'id, student_code, admission_number, name, student_mobile, parent_mobile, status, academic_year_id, course_id, class_id, branch_id, batch_id, board_id, courses(name), classes(name), academic_years(name), branches(name), batches(name), boards(name)';
 
 export function buildStudentRecordQuery(supabase: SupabaseClient, filters: StudentRecordFilters, opts?: { count?: 'exact' }) {
   let query = supabase.from('students').select(SELECT, opts?.count ? { count: opts.count } : undefined).eq('org_id', filters.orgId);
 
   if (filters.academicYearId) query = query.eq('academic_year_id', filters.academicYearId);
   if (filters.courseId) query = query.eq('course_id', filters.courseId);
-  if (filters.courseIds) {
-    // Empty array = a class filter matched no courses at all, so the result
-    // set must be empty too - filter on an id that can never match.
-    query = query.in('course_id', filters.courseIds.length > 0 ? filters.courseIds : ['00000000-0000-0000-0000-000000000000']);
-  }
+  if (filters.classId) query = query.eq('class_id', filters.classId);
   if (filters.branchId) query = query.eq('branch_id', filters.branchId);
   if (filters.batchId) query = query.eq('batch_id', filters.batchId);
   if (filters.boardId) query = query.eq('board_id', filters.boardId);

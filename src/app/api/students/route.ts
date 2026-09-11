@@ -68,6 +68,12 @@ export async function GET(request: Request) {
 // `address` column is simply never written to from here. The remaining
 // selects are HTML `required` on the form, so the browser won't submit them
 // blank in normal use - this schema re-checks the same rule server-side.
+//
+// class_id IS stored (migration 0018) even though a student's Course also
+// carries its own tagged classes - a course can be tagged to more than one
+// Class (migration 0016), so the course alone can no longer answer which
+// specific class THIS student is in. Never derive a student's class from
+// their course; always read/write students.class_id directly.
 const insertSchema = z.object({
   name: z.string().min(2),
   guardian_name: z.string().min(1),
@@ -81,6 +87,7 @@ const insertSchema = z.object({
   landmark: z.string().optional(),
   pincode: z.string().regex(/^\d{6}$/, 'PIN code must be 6 digits'),
   district: z.string().min(1),
+  class_id: z.string().uuid(),
   course_id: z.string().uuid(),
   batch_id: z.string().uuid(),
   academic_year_id: z.string().uuid(),
@@ -123,6 +130,7 @@ export async function POST(request: Request) {
         landmark: body.landmark || null,
         pincode: body.pincode,
         district: body.district,
+        class_id: body.class_id,
         course_id: body.course_id,
         batch_id: body.batch_id,
         academic_year_id: body.academic_year_id,

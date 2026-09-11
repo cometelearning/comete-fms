@@ -174,7 +174,7 @@ export function StudentRecordReport({
                   </td>
                   <td>{r.student_mobile ?? r.parent_mobile ?? '-'}</td>
                   <td>{r.courses?.name ?? '-'}</td>
-                  <td>{r.courses?.class_standard ?? '-'}</td>
+                  <td>{r.classes?.name ?? '-'}</td>
                   <td>{r.academic_years?.name ?? '-'}</td>
                   <td>{r.branches?.name ?? '-'}</td>
                   <td className="text-right">{formatCurrency(r.fee_totals?.totalFee ?? 0)}</td>

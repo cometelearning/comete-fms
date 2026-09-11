@@ -3,7 +3,6 @@ import { createClient } from '@/lib/supabase/server';
 import { requirePermission } from '@/lib/auth/session';
 import { apiError } from '@/lib/api/handler';
 import { buildStudentRecordQuery, fetchStudentFeeTotals } from '@/lib/reports/studentRecordQuery';
-import { resolveClassToCourseIds } from '@/lib/reports/classFilter';
 
 export const runtime = 'nodejs';
 const PAGE_SIZE = 30;
@@ -14,7 +13,6 @@ export async function GET(request: Request) {
     const supabase = createClient();
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, Number(searchParams.get('page') ?? '1'));
-    const courseIds = await resolveClassToCourseIds(supabase, session.orgId, searchParams.get('class_id'));
 
     const query = buildStudentRecordQuery(
       supabase,
@@ -22,7 +20,7 @@ export async function GET(request: Request) {
         orgId: session.orgId,
         academicYearId: searchParams.get('academic_year_id'),
         courseId: searchParams.get('course_id'),
-        courseIds,
+        classId: searchParams.get('class_id'),
         branchId: searchParams.get('branch_id'),
         batchId: searchParams.get('batch_id'),
         boardId: searchParams.get('board_id'),

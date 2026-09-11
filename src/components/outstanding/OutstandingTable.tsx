@@ -146,7 +146,7 @@ export function OutstandingTable({ years, courses, classes, canExport }: Props) 
                   </td>
                   <td>{r.students?.student_mobile ?? r.students?.parent_mobile ?? '-'}</td>
                   <td>{r.students?.courses?.name ?? '-'}</td>
-                  <td>{r.students?.courses?.class_standard ?? '-'}</td>
+                  <td>{r.students?.classes?.name ?? '-'}</td>
                   <td className="text-right">{formatCurrency(r.total_fee)}</td>
                   <td className="text-right text-emerald-700">{formatCurrency(r.paid_total)}</td>
                   <td className="text-right font-semibold text-red-700">{formatCurrency(r.outstanding_total)}</td>

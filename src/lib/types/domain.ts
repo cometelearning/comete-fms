@@ -130,6 +130,12 @@ export interface Student {
   landmark: string | null;
   pincode: string | null;
   district: string | null;
+  // The one Class this student is actually in (migration 0018). Stored
+  // directly rather than read off the course, because a course can now be
+  // tagged to more than one Class (migration 0016) - `courses.class_standard`
+  // can no longer answer "which class is THIS student in" once a course has
+  // more than one tag, only "which classes is this course offered under".
+  class_id: string | null;
   course_id: string | null;
   batch_id: string | null;
   academic_year_id: string | null;

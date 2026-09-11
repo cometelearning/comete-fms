@@ -62,12 +62,13 @@ const emptyForm = {
 // Class and Course are two separate required selects, Course cascading from
 // Class (Course Master now requires every course to be tagged to at least
 // one Class - picking a Class here filters the Course list down to the
-// courses tagged to that Class). class_id itself is UI-only, never sent to
-// the API and stripped automatically if it were (neither the insert nor
-// update schema on /api/students accepts it) - the student record still
-// stores only course_id, since a course's classes never change
-// independently of the course (single source of truth is Course Master,
-// not a second stored copy on the student).
+// courses tagged to that Class). class_id IS sent to the API and stored on
+// the student (migration 0018) - it used to be UI-only (derived from the
+// course instead), but that broke once a course could be tagged to more
+// than one Class: there was no way left to know which one a given student
+// was actually in. class_id is now the single source of truth for a
+// student's Class; the Class cascade above only exists to filter the
+// Course dropdown to sensible options, not to compute anything.
 //
 // Every remaining field on this form is mandatory (per the office's
 // data-entry policy) except Student Mobile, Student Email, Parent Email
@@ -87,13 +88,14 @@ export function StudentForm({ mode, studentId, classes, courses, years, branches
   const router = useRouter();
   const [form, setForm] = useState<Record<string, any>>(() => { // eslint-disable-line @typescript-eslint/no-explicit-any
     const base = { ...emptyForm, ...initial };
-    // Edit mode: derive the initial Class selection from the student's
-    // existing course, so the cascade starts pre-filled instead of forcing
-    // a reselect of a course that's already correct. If the course is
-    // tagged to more than one Class, there's no way to know which one was
-    // originally intended (the student record only stores course_id) - the
-    // first one is picked as a reasonable default; the Course select still
-    // shows the right course either way, since it's tagged to that Class too.
+    // Edit mode: base.class_id normally comes straight from the student
+    // record now (migration 0018). The fallback below only matters for a
+    // student saved before that migration whose class_id hasn't been
+    // backfilled (their course was tagged to more than one Class at the
+    // time, so there was no unambiguous class to backfill) - in that case,
+    // fall back to the course's first tagged Class as a starting point; the
+    // office should confirm/correct it and save, which will persist the
+    // right class_id going forward.
     if (!base.class_id && base.course_id) {
       const current = courses.find((c) => c.value === base.course_id);
       if (current?.classIds?.length) base.class_id = current.classIds[0];
