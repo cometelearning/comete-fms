@@ -20,14 +20,16 @@ export async function GET(_request: Request, { params }: { params: { id: string 
 
 // Every field on the Edit Student form is mandatory, same as creating one
 // (see src/app/api/students/route.ts), except student_mobile / student_email
-// / parent_email / last_year_percentage / remarks, which stay optional.
-// admission_number is NOT in this schema at all - like student_code, it is
-// system-generated once at creation and is never accepted from the client,
-// so it can never be changed via this endpoint (the `update` object below
-// only ever contains keys this schema parsed). The Edit Student form always
-// submits the full form, so this mirrors the insert schema rather than
-// being a true partial update; `status` is the one exception (not a field
-// on the form today).
+// / parent_email / last_year_percentage / landmark / remarks, which stay
+// optional. admission_number is NOT in this schema at all - like
+// student_code, it is system-generated once at creation and is never
+// accepted from the client, so it can never be changed via this endpoint
+// (the `update` object below only ever contains keys this schema parsed).
+// Address is five structured fields (migration 0017) instead of one
+// free-text box; the old `address` column is simply never written to from
+// here. The Edit Student form always submits the full form, so this mirrors
+// the insert schema rather than being a true partial update; `status` is
+// the one exception (not a field on the form today).
 const updateSchema = z.object({
   name: z.string().min(2),
   guardian_name: z.string().min(1),
@@ -36,7 +38,11 @@ const updateSchema = z.object({
   parent_mobile: z.string().min(1),
   student_email: z.string().email().optional().nullable().or(z.literal('')),
   parent_email: z.string().email().optional().nullable().or(z.literal('')),
-  address: z.string().min(1),
+  plot_flat_no: z.string().min(1),
+  area: z.string().min(1),
+  landmark: z.string().optional().nullable(),
+  pincode: z.string().regex(/^\d{6}$/, 'PIN code must be 6 digits'),
+  district: z.string().min(1),
   course_id: z.string().uuid(),
   batch_id: z.string().uuid(),
   academic_year_id: z.string().uuid(),
@@ -54,13 +60,14 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     const session = await requirePermission('students.write');
     const body = updateSchema.parse(await request.json());
     // student_mobile / student_email / parent_email / last_year_percentage /
-    // remarks are optional: normalize '' (an untouched field on the form) to
-    // null before writing.
+    // landmark / remarks are optional: normalize '' (an untouched field on
+    // the form) to null before writing.
     const update: Record<string, unknown> = {
       ...body,
       student_mobile: body.student_mobile || null,
       student_email: body.student_email || null,
       parent_email: body.parent_email || null,
+      landmark: body.landmark || null,
       last_year_percentage: body.last_year_percentage || null,
       remarks: body.remarks || null
     };

@@ -17,11 +17,11 @@ import type { SupabaseClient } from '@supabase/supabase-js';
  * otherwise.
  *
  * Note: the Dashboard's class filter does NOT go through this helper - it
- * filters via the separate dashboard_summary() RPC (migration 0009), which
- * still matches on courses.class_standard text and was not rewritten to use
- * course_classes. That means the Dashboard's class filter under-matches any
- * course tagged to more than one class - a known, flagged limitation, not a
- * bug in this helper.
+ * filters via the separate dashboard_summary() RPC (migration 0009, filter
+ * params added by 0017), which now does its own equivalent course_classes
+ * match directly in SQL (an EXISTS against course_classes by class_id)
+ * rather than resolving ids here first. Both mechanisms rely on the same
+ * join table and are equivalent in effect.
  */
 export async function resolveClassToCourseIds(
   supabase: SupabaseClient,

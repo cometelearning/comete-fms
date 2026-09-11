@@ -120,7 +120,16 @@ export interface Student {
   parent_mobile: string | null;
   student_email: string | null;
   parent_email: string | null;
+  // Frozen (never destructively removed) - replaced by the five structured
+  // fields below (migration 0017). Still readable for students entered
+  // before the split; the student profile falls back to showing it only
+  // when none of the five new fields have been filled in yet.
   address: string | null;
+  plot_flat_no: string | null;
+  area: string | null;
+  landmark: string | null;
+  pincode: string | null;
+  district: string | null;
   course_id: string | null;
   batch_id: string | null;
   academic_year_id: string | null;

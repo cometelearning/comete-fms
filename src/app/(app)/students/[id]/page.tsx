@@ -75,7 +75,6 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
         <Info label="Admission Number" value={student.admission_number} />
         <Info label="Admission Date" value={formatDate(student.admission_date)} />
         <Info label="Date of Birth" value={student.date_of_birth ? formatDate(student.date_of_birth) : null} />
-        <Info label="Address" value={student.address} />
         <Info label="Academic Year" value={year?.name} />
         <Info label="Class" value={course?.class_standard} />
         <Info label="Course" value={course?.name} />
@@ -84,6 +83,29 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
         <Info label="Board" value={board?.name} />
         <Info label="School Name" value={student.school_name} />
         <Info label="Last Year %" value={student.last_year_percentage} />
+      </div>
+
+      <div className="card p-6">
+        <h2 className="mb-4 text-sm font-semibold text-slate-800">Address</h2>
+        {student.plot_flat_no || student.area || student.landmark || student.pincode || student.district ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <Info label="Plot No / Flat No." value={student.plot_flat_no} />
+            <Info label="Area" value={student.area} />
+            <Info label="Landmark" value={student.landmark} />
+            <Info label="PIN Code" value={student.pincode} />
+            <Info label="District" value={student.district} />
+          </div>
+        ) : student.address ? (
+          <div>
+            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">Address (previously entered)</p>
+            <p className="text-sm text-slate-800">{student.address}</p>
+            <p className="mt-2 text-xs text-slate-400">
+              Entered before the address form was split into Plot/Flat No., Area, Landmark, PIN Code and District - use Edit to fill those in.
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-slate-400">No address on file.</p>
+        )}
       </div>
 
       <div>

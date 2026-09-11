@@ -11,7 +11,14 @@ import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils/format';
 export default async function DashboardPage({
   searchParams
 }: {
-  searchParams: { academic_year_id?: string; course_id?: string; class_standard?: string };
+  searchParams: {
+    academic_year_id?: string;
+    course_id?: string;
+    class_id?: string;
+    branch_id?: string;
+    batch_id?: string;
+    board_id?: string;
+  };
 }) {
   const session = await getSession();
   if (!session || !session.permissions.has('dashboard.view')) redirect('/login');
@@ -20,19 +27,29 @@ export default async function DashboardPage({
 
   const academicYearId = searchParams.academic_year_id || null;
   const courseId = searchParams.course_id || null;
-  const classStandard = searchParams.class_standard || null;
+  const classId = searchParams.class_id || null;
+  const branchId = searchParams.branch_id || null;
+  const batchId = searchParams.batch_id || null;
+  const boardId = searchParams.board_id || null;
 
   const [
     { data: summary, error: summaryError },
     { data: recentReceipts },
     { data: upcomingDue },
     { data: years },
-    { data: courses }
+    { data: courses },
+    { data: classes },
+    { data: branches },
+    { data: batches },
+    { data: boards }
   ] = await Promise.all([
     supabase.rpc('dashboard_summary', {
       p_academic_year_id: academicYearId,
       p_course_id: courseId,
-      p_class_standard: classStandard
+      p_class_id: classId,
+      p_branch_id: branchId,
+      p_batch_id: batchId,
+      p_board_id: boardId
     }),
     supabase
       .from('receipts')
@@ -48,7 +65,11 @@ export default async function DashboardPage({
       .order('due_date', { ascending: true })
       .limit(8),
     supabase.from('academic_years').select('id,name').order('start_date', { ascending: false }),
-    supabase.from('courses').select('id,name,class_standard').eq('status', 'ACTIVE').order('name')
+    supabase.from('courses').select('id,name').eq('status', 'ACTIVE').order('name'),
+    supabase.from('classes').select('id,name').eq('status', 'ACTIVE').order('name'),
+    supabase.from('branches').select('id,name').eq('status', 'ACTIVE').order('name'),
+    supabase.from('batches').select('id,name').eq('status', 'ACTIVE').order('name'),
+    supabase.from('boards').select('id,name').eq('status', 'ACTIVE').order('name')
   ]);
 
   if (summaryError) {
@@ -59,12 +80,13 @@ export default async function DashboardPage({
 
   const yearOptions = (years ?? []).map((y) => ({ value: y.id, label: y.name }));
   const courseOptions = (courses ?? []).map((c) => ({ value: c.id, label: c.name }));
-  const classOptions = Array.from(new Set((courses ?? []).map((c) => c.class_standard).filter((v): v is string => !!v))).map((v) => ({
-    value: v,
-    label: v
-  }));
+  const classOptions = (classes ?? []).map((c) => ({ value: c.id, label: c.name }));
+  const branchOptions = (branches ?? []).map((b) => ({ value: b.id, label: b.name }));
+  const batchOptions = (batches ?? []).map((b) => ({ value: b.id, label: b.name }));
+  const boardOptions = (boards ?? []).map((b) => ({ value: b.id, label: b.name }));
 
-  const collectionLabel = academicYearId || courseId || classStandard ? 'Filtered Collection' : "Current Academic Year Collection";
+  const hasAnyFilter = academicYearId || courseId || classId || branchId || batchId || boardId;
+  const collectionLabel = hasAnyFilter ? 'Filtered Collection' : "Current Academic Year Collection";
 
   return (
     <div className="space-y-6">
@@ -73,7 +95,14 @@ export default async function DashboardPage({
         <p className="text-sm text-slate-500">Welcome back, {session.profile.full_name.split(' ')[0]}.</p>
       </div>
 
-      <DashboardFilters years={yearOptions} courses={courseOptions} classes={classOptions} />
+      <DashboardFilters
+        years={yearOptions}
+        courses={courseOptions}
+        classes={classOptions}
+        branches={branchOptions}
+        batches={batchOptions}
+        boards={boardOptions}
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Today's Collection" value={formatCurrency(s.today_collection)} tone="success" />

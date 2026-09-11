@@ -60,12 +60,14 @@ export async function GET(request: Request) {
 // their own phone or email yet, and some parents don't have email -
 // parent_mobile stays mandatory since there must always be a way to reach a
 // guardian), last_year_percentage (some admissions are new students with no
-// prior year result) and remarks. admission_number is NOT accepted here at
-// all - like student_code, it is system-generated server-side (see
-// generate_admission_number, migration 0015) and is never entered or edited
-// through the form. The remaining selects are HTML `required` on the form,
-// so the browser won't submit them blank in normal use - this schema
-// re-checks the same rule server-side.
+// prior year result), landmark (not every address has one) and remarks.
+// admission_number is NOT accepted here at all - like student_code, it is
+// system-generated server-side (see generate_admission_number, migration
+// 0015) and is never entered or edited through the form. Address is five
+// structured fields (migration 0017) instead of one free-text box; the old
+// `address` column is simply never written to from here. The remaining
+// selects are HTML `required` on the form, so the browser won't submit them
+// blank in normal use - this schema re-checks the same rule server-side.
 const insertSchema = z.object({
   name: z.string().min(2),
   guardian_name: z.string().min(1),
@@ -74,7 +76,11 @@ const insertSchema = z.object({
   parent_mobile: z.string().min(1),
   student_email: z.string().email().optional().or(z.literal('')),
   parent_email: z.string().email().optional().or(z.literal('')),
-  address: z.string().min(1),
+  plot_flat_no: z.string().min(1),
+  area: z.string().min(1),
+  landmark: z.string().optional(),
+  pincode: z.string().regex(/^\d{6}$/, 'PIN code must be 6 digits'),
+  district: z.string().min(1),
   course_id: z.string().uuid(),
   batch_id: z.string().uuid(),
   academic_year_id: z.string().uuid(),
@@ -112,7 +118,11 @@ export async function POST(request: Request) {
         parent_mobile: body.parent_mobile,
         student_email: body.student_email || null,
         parent_email: body.parent_email || null,
-        address: body.address,
+        plot_flat_no: body.plot_flat_no,
+        area: body.area,
+        landmark: body.landmark || null,
+        pincode: body.pincode,
+        district: body.district,
         course_id: body.course_id,
         batch_id: body.batch_id,
         academic_year_id: body.academic_year_id,

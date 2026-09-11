@@ -38,7 +38,11 @@ const emptyForm = {
   parent_mobile: '',
   student_email: '',
   parent_email: '',
-  address: '',
+  plot_flat_no: '',
+  area: '',
+  landmark: '',
+  pincode: '',
+  district: '',
   class_id: '',
   course_id: '',
   academic_year_id: '',
@@ -70,10 +74,15 @@ const emptyForm = {
 // (not every student has their own phone/email, and some parents have no
 // email - Parent Mobile stays mandatory since there must always be a way to
 // reach a guardian), Last Year % (some students are new admissions with no
-// prior year result) and Remarks - plus the Fee section below, which stays
-// optional and can always be filled in later from the student's profile.
+// prior year result), Landmark (not every address has a well-known nearby
+// landmark) and Remarks - plus the Fee section below, which stays optional
+// and can always be filled in later from the student's profile.
 // Being mandatory only governs what's needed to save; every field, including
 // these, stays editable afterwards from this same form in edit mode.
+//
+// Address is five structured blocks (Plot/Flat No., Area, Landmark, PIN
+// Code, District) instead of one free-text box (migration 0017) - the old
+// single `address` column is no longer written to from this form at all.
 export function StudentForm({ mode, studentId, classes, courses, years, branches, batches, boards, feeHeads, initial }: Props) {
   const router = useRouter();
   const [form, setForm] = useState<Record<string, any>>(() => { // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -223,9 +232,38 @@ export function StudentForm({ mode, studentId, classes, courses, years, branches
           <label className="label">Parent Email</label>
           <input type="email" className="input" value={form.parent_email} onChange={(e) => update('parent_email', e.target.value)} />
         </div>
-        <div className="sm:col-span-2">
-          <label className="label">Address *</label>
-          <textarea className="input" required value={form.address} onChange={(e) => update('address', e.target.value)} />
+      </fieldset>
+
+      <fieldset className="grid grid-cols-1 gap-4 border-t border-slate-100 pt-4 sm:grid-cols-2 lg:grid-cols-3">
+        <legend className="mb-2 text-sm font-semibold text-slate-800">Address</legend>
+        <div>
+          <label className="label">Plot No / Flat No. *</label>
+          <input className="input" required value={form.plot_flat_no ?? ''} onChange={(e) => update('plot_flat_no', e.target.value)} />
+        </div>
+        <div>
+          <label className="label">Area *</label>
+          <input className="input" required value={form.area ?? ''} onChange={(e) => update('area', e.target.value)} />
+        </div>
+        <div>
+          <label className="label">Landmark</label>
+          <input className="input" value={form.landmark ?? ''} onChange={(e) => update('landmark', e.target.value)} />
+        </div>
+        <div>
+          <label className="label">PIN Code *</label>
+          <input
+            className="input"
+            required
+            inputMode="numeric"
+            pattern="[0-9]{6}"
+            title="6-digit PIN code"
+            maxLength={6}
+            value={form.pincode ?? ''}
+            onChange={(e) => update('pincode', e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="label">District *</label>
+          <input className="input" required value={form.district ?? ''} onChange={(e) => update('district', e.target.value)} />
         </div>
       </fieldset>
 
