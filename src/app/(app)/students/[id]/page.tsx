@@ -8,6 +8,11 @@ import { FeeAccountDialog } from '@/components/students/FeeAccountDialog';
 import { GrantDiscountButton } from '@/components/students/GrantDiscountButton';
 import { PtmRecordDialog } from '@/components/ptm/PtmRecordDialog';
 import { StudentDangerZone } from '@/components/students/StudentDangerZone';
+import { PracticeSlipDialog } from '@/components/practice-slips/PracticeSlipDialog';
+import { StudentPerformanceDialog } from '@/components/student-performance/StudentPerformanceDialog';
+import { PracticeCopyCheckDialog } from '@/components/practice-copy-check/PracticeCopyCheckDialog';
+
+const LEVEL_LABELS: Record<string, string> = { LEVEL_1: 'Level 1', LEVEL_2: 'Level 2', LEVEL_3: 'Level 3', NA: 'NA' };
 
 export default async function StudentDetailPage({ params }: { params: { id: string } }) {
   const session = await getSession();
@@ -20,24 +25,56 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
 
   const canEnterFee = session.permissions.has('student_fees.write');
   const canWritePtm = session.permissions.has('students.write');
-  const [{ data: course }, { data: studentClass }, { data: year }, { data: batch }, { data: branch }, { data: board }, { data: feeSummaries }, feeHeadsResult, { data: ptmRecords }] =
-    await Promise.all([
-      student.course_id ? supabase.from('courses').select('name').eq('id', student.course_id).single() : Promise.resolve({ data: null }),
-      // The student's own Class (migration 0018) - never read this off the
-      // course. A course can be tagged to more than one Class, so
-      // `courses.class_standard` can only say which classes a course is
-      // OFFERED under, not which one this particular student is in.
-      student.class_id ? supabase.from('classes').select('name').eq('id', student.class_id).single() : Promise.resolve({ data: null }),
-      student.academic_year_id ? supabase.from('academic_years').select('name').eq('id', student.academic_year_id).single() : Promise.resolve({ data: null }),
-      student.batch_id ? supabase.from('batches').select('name').eq('id', student.batch_id).single() : Promise.resolve({ data: null }),
-      student.branch_id ? supabase.from('branches').select('name').eq('id', student.branch_id).single() : Promise.resolve({ data: null }),
-      student.board_id ? supabase.from('boards').select('name').eq('id', student.board_id).single() : Promise.resolve({ data: null }),
-      supabase.from('student_fee_summary').select('*, fee_structures(name)').eq('student_id', params.id),
-      canEnterFee ? supabase.from('fee_heads').select('id,name').eq('status', 'ACTIVE').eq('org_id', session.orgId) : Promise.resolve({ data: null }),
-      supabase.from('ptm_records').select('*').eq('student_id', params.id).order('ptm_date', { ascending: false })
-    ]);
+  const [
+    { data: course },
+    { data: studentClass },
+    { data: year },
+    { data: batch },
+    { data: branch },
+    { data: board },
+    { data: feeSummaries },
+    feeHeadsResult,
+    { data: ptmRecords },
+    { data: practiceSlips },
+    { data: performanceRecords },
+    { data: copyChecks },
+    subjectsResult,
+    teachersResult
+  ] = await Promise.all([
+    student.course_id ? supabase.from('courses').select('name').eq('id', student.course_id).single() : Promise.resolve({ data: null }),
+    // The student's own Class (migration 0018) - never read this off the
+    // course. A course can be tagged to more than one Class, so
+    // `courses.class_standard` can only say which classes a course is
+    // OFFERED under, not which one this particular student is in.
+    student.class_id ? supabase.from('classes').select('name').eq('id', student.class_id).single() : Promise.resolve({ data: null }),
+    student.academic_year_id ? supabase.from('academic_years').select('name').eq('id', student.academic_year_id).single() : Promise.resolve({ data: null }),
+    student.batch_id ? supabase.from('batches').select('name').eq('id', student.batch_id).single() : Promise.resolve({ data: null }),
+    student.branch_id ? supabase.from('branches').select('name').eq('id', student.branch_id).single() : Promise.resolve({ data: null }),
+    student.board_id ? supabase.from('boards').select('name').eq('id', student.board_id).single() : Promise.resolve({ data: null }),
+    supabase.from('student_fee_summary').select('*, fee_structures(name)').eq('student_id', params.id),
+    canEnterFee ? supabase.from('fee_heads').select('id,name').eq('status', 'ACTIVE').eq('org_id', session.orgId) : Promise.resolve({ data: null }),
+    supabase.from('ptm_records').select('*').eq('student_id', params.id).order('ptm_date', { ascending: false }),
+    // "Make sure all the academics are mapped to the students" - Practice
+    // Slips, Student Performance and Practice Copy Check are embedded
+    // directly on the student's own profile, same as PTM Records.
+    supabase
+      .from('practice_slips')
+      .select('*, subjects(name)')
+      .eq('student_id', params.id)
+      .order('slip_date', { ascending: false }),
+    supabase
+      .from('student_performance_records')
+      .select('*, subjects(name), teachers(name)')
+      .eq('student_id', params.id)
+      .order('exam_date', { ascending: false }),
+    supabase.from('practice_copy_checks').select('*, teachers(name)').eq('student_id', params.id).order('check_date', { ascending: false }),
+    canWritePtm ? supabase.from('subjects').select('id,name').eq('org_id', session.orgId).eq('status', 'ACTIVE').order('name') : Promise.resolve({ data: null }),
+    canWritePtm ? supabase.from('teachers').select('id,name').eq('org_id', session.orgId).eq('status', 'ACTIVE').order('name') : Promise.resolve({ data: null })
+  ]);
 
   const feeHeadOptions = (feeHeadsResult.data ?? []).map((f) => ({ value: f.id, label: f.name }));
+  const subjectOptions = (subjectsResult.data ?? []).map((s) => ({ value: s.id, label: s.name }));
+  const teacherOptions = (teachersResult.data ?? []).map((t) => ({ value: t.id, label: t.name }));
 
   return (
     <div className="space-y-6">
@@ -61,6 +98,9 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
           </Link>
           <Link href={`/receipts?student_id=${student.id}`} className="btn-secondary">
             View Receipts
+          </Link>
+          <Link href={`/students/${student.id}/academic-report`} className="btn-secondary">
+            Academic Report
           </Link>
           {session.permissions.has('payments.collect') && (
             <Link href={`/collect-fee?student_id=${student.id}`} className="btn-primary">
@@ -233,6 +273,204 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
                             parent_remarks: r.parent_remarks,
                             counsellor_remarks: r.counsellor_remarks
                           }}
+                          buttonLabel="Edit"
+                          buttonClassName="btn-ghost px-2 py-1 text-xs"
+                        />
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-900">Practice Slips</h2>
+          {canWritePtm && (
+            <PracticeSlipDialog
+              mode="create"
+              studentId={student.id}
+              studentLabel={student.name}
+              subjects={subjectOptions}
+              buttonLabel="+ Add Practice Slip"
+              buttonClassName="btn-primary"
+            />
+          )}
+        </div>
+        {(practiceSlips ?? []).length === 0 ? (
+          <div className="card p-6 text-sm text-slate-500">
+            No practice slips yet.
+            {canWritePtm && ' Use "Add Practice Slip" to log one.'}
+          </div>
+        ) : (
+          <div className="card overflow-x-auto">
+            <table className="table-base">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Subject</th>
+                  <th>Topic</th>
+                  <th>Level</th>
+                  <th>Status</th>
+                  {canWritePtm && <th></th>}
+                </tr>
+              </thead>
+              <tbody>
+                {(practiceSlips ?? []).map((r: any) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
+                  <tr key={r.id}>
+                    <td>{formatDate(r.slip_date)}</td>
+                    <td>{r.subjects?.name ?? '-'}</td>
+                    <td className="max-w-xs">{r.topic}</td>
+                    <td>{LEVEL_LABELS[r.level] ?? r.level}</td>
+                    <td>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          r.status === 'CHECKED' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'
+                        }`}
+                      >
+                        {r.status === 'CHECKED' ? 'Checked' : 'Pending'}
+                      </span>
+                    </td>
+                    {canWritePtm && (
+                      <td className="whitespace-nowrap text-right">
+                        <PracticeSlipDialog
+                          mode="edit"
+                          recordId={r.id}
+                          studentLabel={student.name}
+                          subjects={subjectOptions}
+                          initial={{ subject_id: r.subject_id, slip_date: r.slip_date, topic: r.topic, level: r.level }}
+                          buttonLabel="Edit"
+                          buttonClassName="btn-ghost px-2 py-1 text-xs"
+                        />
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-900">Student Performance (Marks)</h2>
+          {canWritePtm && (
+            <StudentPerformanceDialog
+              mode="create"
+              studentId={student.id}
+              studentLabel={student.name}
+              subjects={subjectOptions}
+              teachers={teacherOptions}
+              buttonLabel="+ Add Performance Record"
+              buttonClassName="btn-primary"
+            />
+          )}
+        </div>
+        {(performanceRecords ?? []).length === 0 ? (
+          <div className="card p-6 text-sm text-slate-500">
+            No performance records yet.
+            {canWritePtm && ' Use "Add Performance Record" to log one.'}
+          </div>
+        ) : (
+          <div className="card overflow-x-auto">
+            <table className="table-base">
+              <thead>
+                <tr>
+                  <th>Exam Date</th>
+                  <th>Subject</th>
+                  <th>Topic</th>
+                  <th className="text-right">Marks</th>
+                  <th>Teacher</th>
+                  {canWritePtm && <th></th>}
+                </tr>
+              </thead>
+              <tbody>
+                {(performanceRecords ?? []).map((r: any) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
+                  <tr key={r.id}>
+                    <td>{formatDate(r.exam_date)}</td>
+                    <td>{r.subjects?.name ?? '-'}</td>
+                    <td className="max-w-xs">{r.topic}</td>
+                    <td className="text-right">
+                      {r.marks_obtained} / {r.total_marks}
+                    </td>
+                    <td>{r.teachers?.name ?? '-'}</td>
+                    {canWritePtm && (
+                      <td className="whitespace-nowrap text-right">
+                        <StudentPerformanceDialog
+                          mode="edit"
+                          recordId={r.id}
+                          studentLabel={student.name}
+                          subjects={subjectOptions}
+                          teachers={teacherOptions}
+                          initial={{
+                            subject_id: r.subject_id,
+                            exam_date: r.exam_date,
+                            topic: r.topic,
+                            total_marks: r.total_marks,
+                            marks_obtained: r.marks_obtained,
+                            teacher_id: r.teacher_id
+                          }}
+                          buttonLabel="Edit"
+                          buttonClassName="btn-ghost px-2 py-1 text-xs"
+                        />
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-900">Practice Copy Check</h2>
+          {canWritePtm && (
+            <PracticeCopyCheckDialog
+              mode="create"
+              studentId={student.id}
+              studentLabel={student.name}
+              teachers={teacherOptions}
+              buttonLabel="+ Add Practice Copy Check"
+              buttonClassName="btn-primary"
+            />
+          )}
+        </div>
+        {(copyChecks ?? []).length === 0 ? (
+          <div className="card p-6 text-sm text-slate-500">
+            No practice copy checks yet.
+            {canWritePtm && ' Use "Add Practice Copy Check" to log one.'}
+          </div>
+        ) : (
+          <div className="card overflow-x-auto">
+            <table className="table-base">
+              <thead>
+                <tr>
+                  <th>Date Checked</th>
+                  <th>Teacher (Signed)</th>
+                  <th>Remarks</th>
+                  {canWritePtm && <th></th>}
+                </tr>
+              </thead>
+              <tbody>
+                {(copyChecks ?? []).map((r: any) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
+                  <tr key={r.id}>
+                    <td>{formatDate(r.check_date)}</td>
+                    <td>{r.teachers?.name ?? '-'}</td>
+                    <td className="max-w-xs">{r.remarks ?? '-'}</td>
+                    {canWritePtm && (
+                      <td className="whitespace-nowrap text-right">
+                        <PracticeCopyCheckDialog
+                          mode="edit"
+                          recordId={r.id}
+                          studentLabel={student.name}
+                          teachers={teacherOptions}
+                          initial={{ check_date: r.check_date, teacher_id: r.teacher_id, remarks: r.remarks }}
                           buttonLabel="Edit"
                           buttonClassName="btn-ghost px-2 py-1 text-xs"
                         />

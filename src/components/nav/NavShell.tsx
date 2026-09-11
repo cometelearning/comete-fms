@@ -52,7 +52,10 @@ const NAV_ITEMS: NavItem[] = [
     children: [
       { href: '/subjects', label: 'Subject Master', permission: 'masters.read' },
       { href: '/teachers', label: 'Teacher Master', permission: 'masters.read' },
-      { href: '/ptm', label: 'PTM', permission: 'students.read' }
+      { href: '/ptm', label: 'PTM', permission: 'students.read' },
+      { href: '/practice-slips', label: 'Practice Slips', permission: 'students.read' },
+      { href: '/student-performance', label: 'Student Performance', permission: 'students.read' },
+      { href: '/practice-copy-check', label: 'Practice Copy Check', permission: 'students.read' }
     ]
   },
   { href: '/student-fees', label: 'Student Fees', permission: 'student_fees.read' },

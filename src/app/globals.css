@@ -11,6 +11,13 @@ body {
 }
 
 @media print {
+  /* "Any report should be in proper A4 format only" - applies to every
+     on-screen report printed via window.print() (receipts, the Student
+     Academic Report, etc.), not just the PDF-lib generated exports. */
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
   .no-print {
     display: none !important;
   }

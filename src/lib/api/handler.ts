@@ -53,7 +53,8 @@ export function apiError(error: unknown): NextResponse {
     INVALID_DISCOUNT_TYPE: 'Please choose a valid discount type.',
     CANNOT_DISABLE_SELF: 'You cannot disable your own account.',
     INVALID_ROLE: 'That role does not exist.',
-    STUDENT_HAS_FEE_RECORDS: 'This student has a fee account, payment or receipt on record and cannot be permanently deleted. Deactivate the student instead to keep their financial history intact.'
+    STUDENT_HAS_FEE_RECORDS: 'This student has a fee account, payment or receipt on record and cannot be permanently deleted. Deactivate the student instead to keep their financial history intact.',
+    marks_obtained_within_total: 'Marks obtained cannot exceed total marks.'
   };
 
   for (const code of Object.keys(knownBusinessErrors)) {
