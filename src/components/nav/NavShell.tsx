@@ -13,7 +13,7 @@ interface NavItem {
   children?: NavItem[];
 }
 
-// "Masters" bundles the setup screens (Academic Year / Course / Batch / Fee
+// "Masters" bundles the setup screens (Academic Year / Class / Course / Fee
 // Head) that a fee structure depends on. These are deliberately grouped
 // under one entry rather than added as separate top-level items, per the
 // spec's "keep navigation clean, no unnecessary items" instruction - but
@@ -28,7 +28,8 @@ const NAV_ITEMS: NavItem[] = [
     permission: 'masters.read',
     children: [
       { href: '/academic-years', label: 'Academic Years', permission: 'masters.read' },
-      { href: '/courses', label: 'Courses / Classes', permission: 'masters.read' },
+      { href: '/classes', label: 'Classes', permission: 'masters.read' },
+      { href: '/courses', label: 'Courses', permission: 'masters.read' },
       { href: '/fee-heads', label: 'Fee Heads', permission: 'masters.read' }
     ]
   },
@@ -62,7 +63,7 @@ export function NavShell({
   }));
   const isWithin = (href: string) => pathname === href || pathname?.startsWith(href + '/');
   const [mastersOpen, setMastersOpen] = useState(() =>
-    ['/academic-years', '/courses', '/fee-heads'].some((h) => isWithin(h))
+    ['/academic-years', '/classes', '/courses', '/fee-heads'].some((h) => isWithin(h))
   );
 
   async function signOut() {

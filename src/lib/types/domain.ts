@@ -34,10 +34,21 @@ export interface AcademicYear {
   status: 'ACTIVE' | 'INACTIVE';
 }
 
+export interface ClassMaster {
+  id: string;
+  org_id: string;
+  name: string;
+  status: 'ACTIVE' | 'INACTIVE';
+}
+
 export interface Course {
   id: string;
   org_id: string;
   name: string;
+  class_id: string | null;
+  // Denormalized from classes.name via class_id, kept in sync by a database
+  // trigger (see migration 0011). Report/dashboard filters match on this
+  // text column - do not write it directly, set class_id instead.
   class_standard: string | null;
   description: string | null;
   status: 'ACTIVE' | 'INACTIVE';

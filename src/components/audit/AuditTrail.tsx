@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import { formatDateTime } from '@/lib/utils/format';
 
-const MODULES = ['students', 'academic_years', 'courses', 'batches', 'fee_heads', 'fee_structures', 'student_fees', 'payments', 'receipts', 'discounts', 'users'];
+const MODULES = ['students', 'academic_years', 'classes', 'courses', 'batches', 'fee_heads', 'fee_structures', 'student_fees', 'payments', 'receipts', 'discounts', 'users'];
 
 export function AuditTrail() {
   const [module_, setModule] = useState('');
