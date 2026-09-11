@@ -9,9 +9,11 @@ export default async function NewStudentPage() {
 
   const supabase = createClient();
   const canEnterFee = session.permissions.has('student_fees.write');
-  const [{ data: courses }, { data: years }, feeHeadsResult] = await Promise.all([
+  const [{ data: courses }, { data: years }, { data: branches }, { data: batches }, feeHeadsResult] = await Promise.all([
     supabase.from('courses').select('id,name').eq('status', 'ACTIVE').order('name'),
     supabase.from('academic_years').select('id,name').order('start_date', { ascending: false }),
+    supabase.from('branches').select('id,name').eq('status', 'ACTIVE').order('name'),
+    supabase.from('batches').select('id,name').eq('status', 'ACTIVE').order('name'),
     canEnterFee
       ? supabase.from('fee_heads').select('id,name').eq('status', 'ACTIVE').order('name')
       : Promise.resolve({ data: null })
@@ -24,6 +26,8 @@ export default async function NewStudentPage() {
         mode="create"
         courses={(courses ?? []).map((c) => ({ value: c.id, label: c.name }))}
         years={(years ?? []).map((y) => ({ value: y.id, label: y.name }))}
+        branches={(branches ?? []).map((b) => ({ value: b.id, label: b.name }))}
+        batches={(batches ?? []).map((b) => ({ value: b.id, label: b.name }))}
         feeHeads={canEnterFee ? (feeHeadsResult.data ?? []).map((f) => ({ value: f.id, label: f.name })) : undefined}
       />
     </div>

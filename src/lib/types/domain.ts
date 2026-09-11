@@ -54,12 +54,24 @@ export interface Course {
   status: 'ACTIVE' | 'INACTIVE';
 }
 
+export interface Branch {
+  id: string;
+  org_id: string;
+  name: string;
+  status: 'ACTIVE' | 'INACTIVE';
+}
+
+// Batch is just a type label (e.g. Morning / Evening) - course_id /
+// academic_year_id / branch_id exist in the database (from an earlier
+// design) but are unused and nullable; Batch Master no longer sets or
+// requires them.
 export interface Batch {
   id: string;
   org_id: string;
   name: string;
-  course_id: string;
-  academic_year_id: string;
+  course_id: string | null;
+  academic_year_id: string | null;
+  branch_id: string | null;
   status: 'ACTIVE' | 'INACTIVE';
 }
 
@@ -86,9 +98,14 @@ export interface Student {
   course_id: string | null;
   batch_id: string | null;
   academic_year_id: string | null;
+  branch_id: string | null;
+  school_name: string | null;
+  last_year_percentage: string | null;
+  date_of_birth: string | null;
   admission_date: string;
   status: 'ACTIVE' | 'INACTIVE';
   remarks: string | null;
+  parent_remarks: string | null;
   created_at: string;
   updated_at: string;
 }

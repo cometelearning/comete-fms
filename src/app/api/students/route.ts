@@ -54,20 +54,31 @@ export async function GET(request: Request) {
   }
 }
 
+// Every field on the Add Student form is mandatory (office data-entry
+// policy) except the fee section, which is handled separately by
+// /api/student-fees and stays optional. The Course/Batch/Academic
+// Year/Branch selects are HTML `required` on the form, so the browser
+// won't submit them blank in normal use - this schema re-checks the same
+// rule server-side.
 const insertSchema = z.object({
-  admission_number: z.string().optional(),
+  admission_number: z.string().min(1),
   name: z.string().min(2),
-  guardian_name: z.string().optional(),
-  student_mobile: z.string().optional(),
-  parent_mobile: z.string().optional(),
-  student_email: z.string().email().optional().or(z.literal('')),
-  parent_email: z.string().email().optional().or(z.literal('')),
-  address: z.string().optional(),
-  course_id: z.string().uuid().optional().nullable(),
-  batch_id: z.string().uuid().optional().nullable(),
-  academic_year_id: z.string().uuid().optional().nullable(),
-  admission_date: z.string().optional(),
-  remarks: z.string().optional()
+  guardian_name: z.string().min(1),
+  date_of_birth: z.string().min(1),
+  student_mobile: z.string().min(1),
+  parent_mobile: z.string().min(1),
+  student_email: z.string().email(),
+  parent_email: z.string().email(),
+  address: z.string().min(1),
+  course_id: z.string().uuid(),
+  batch_id: z.string().uuid(),
+  academic_year_id: z.string().uuid(),
+  branch_id: z.string().uuid(),
+  school_name: z.string().min(1),
+  last_year_percentage: z.string().min(1),
+  admission_date: z.string().min(1),
+  remarks: z.string().min(1),
+  parent_remarks: z.string().min(1)
 });
 
 export async function POST(request: Request) {
@@ -84,19 +95,24 @@ export async function POST(request: Request) {
       .insert({
         org_id: session.orgId,
         student_code: studentCode,
-        admission_number: body.admission_number || null,
+        admission_number: body.admission_number,
         name: body.name,
-        guardian_name: body.guardian_name || null,
-        student_mobile: body.student_mobile || null,
-        parent_mobile: body.parent_mobile || null,
-        student_email: body.student_email || null,
-        parent_email: body.parent_email || null,
-        address: body.address || null,
-        course_id: body.course_id || null,
-        batch_id: body.batch_id || null,
-        academic_year_id: body.academic_year_id || null,
-        admission_date: body.admission_date || new Date().toISOString().slice(0, 10),
-        remarks: body.remarks || null,
+        guardian_name: body.guardian_name,
+        date_of_birth: body.date_of_birth,
+        student_mobile: body.student_mobile,
+        parent_mobile: body.parent_mobile,
+        student_email: body.student_email,
+        parent_email: body.parent_email,
+        address: body.address,
+        course_id: body.course_id,
+        batch_id: body.batch_id,
+        academic_year_id: body.academic_year_id,
+        branch_id: body.branch_id,
+        school_name: body.school_name,
+        last_year_percentage: body.last_year_percentage,
+        admission_date: body.admission_date,
+        remarks: body.remarks,
+        parent_remarks: body.parent_remarks,
         created_by: session.userId
       })
       .select()

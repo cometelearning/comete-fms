@@ -9,6 +9,7 @@ export const runtime = 'nodejs';
 
 const BACKUP_TABLES = [
   'students',
+  'branches',
   'classes',
   'courses',
   'batches',

@@ -9,8 +9,8 @@ const updateSchema = z.object({
 });
 
 export const { PATCH } = createItemHandlers({
-  table: 'batches',
+  table: 'branches',
   writePermission: 'masters.write',
   updateSchema,
-  auditModule: 'batches'
+  auditModule: 'branches'
 });

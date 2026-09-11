@@ -17,9 +17,13 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
   if (!student) notFound();
 
   const canEnterFee = session.permissions.has('student_fees.write');
-  const [{ data: course }, { data: year }, { data: feeSummaries }, feeHeadsResult] = await Promise.all([
-    student.course_id ? supabase.from('courses').select('name').eq('id', student.course_id).single() : Promise.resolve({ data: null }),
+  const [{ data: course }, { data: year }, { data: batch }, { data: branch }, { data: feeSummaries }, feeHeadsResult] = await Promise.all([
+    student.course_id
+      ? supabase.from('courses').select('name,class_standard').eq('id', student.course_id).single()
+      : Promise.resolve({ data: null }),
     student.academic_year_id ? supabase.from('academic_years').select('name').eq('id', student.academic_year_id).single() : Promise.resolve({ data: null }),
+    student.batch_id ? supabase.from('batches').select('name').eq('id', student.batch_id).single() : Promise.resolve({ data: null }),
+    student.branch_id ? supabase.from('branches').select('name').eq('id', student.branch_id).single() : Promise.resolve({ data: null }),
     supabase.from('student_fee_summary').select('*, fee_structures(name)').eq('student_id', params.id),
     canEnterFee ? supabase.from('fee_heads').select('id,name').eq('status', 'ACTIVE').eq('org_id', session.orgId) : Promise.resolve({ data: null })
   ]);
@@ -65,7 +69,15 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
         <Info label="Parent Email" value={student.parent_email} />
         <Info label="Admission Number" value={student.admission_number} />
         <Info label="Admission Date" value={formatDate(student.admission_date)} />
+        <Info label="Date of Birth" value={student.date_of_birth ? formatDate(student.date_of_birth) : null} />
         <Info label="Address" value={student.address} />
+        <Info label="Academic Year" value={year?.name} />
+        <Info label="Class" value={course?.class_standard} />
+        <Info label="Course" value={course?.name} />
+        <Info label="Batch" value={batch?.name} />
+        <Info label="Branch" value={branch?.name} />
+        <Info label="School Name" value={student.school_name} />
+        <Info label="Last Year %" value={student.last_year_percentage} />
       </div>
 
       <div>
@@ -128,10 +140,20 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
         )}
       </div>
 
-      {student.remarks && (
-        <div className="card p-4 text-sm text-slate-600">
-          <span className="font-medium text-slate-800">Remarks: </span>
-          {student.remarks}
+      {(student.remarks || student.parent_remarks) && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {student.remarks && (
+            <div className="card p-4 text-sm text-slate-600">
+              <span className="font-medium text-slate-800">Remarks: </span>
+              {student.remarks}
+            </div>
+          )}
+          {student.parent_remarks && (
+            <div className="card p-4 text-sm text-slate-600">
+              <span className="font-medium text-slate-800">Parent&apos;s Remarks: </span>
+              {student.parent_remarks}
+            </div>
+          )}
         </div>
       )}
     </div>

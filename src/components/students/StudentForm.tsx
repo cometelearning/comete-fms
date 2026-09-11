@@ -10,6 +10,8 @@ interface Props {
   studentId?: string;
   courses: FieldOption[];
   years: FieldOption[];
+  branches: FieldOption[];
+  batches: FieldOption[];
   feeHeads?: FeeHeadOption[];
   initial?: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
@@ -18,6 +20,7 @@ const emptyForm = {
   admission_number: '',
   name: '',
   guardian_name: '',
+  date_of_birth: '',
   student_mobile: '',
   parent_mobile: '',
   student_email: '',
@@ -25,11 +28,21 @@ const emptyForm = {
   address: '',
   course_id: '',
   academic_year_id: '',
+  branch_id: '',
+  batch_id: '',
+  school_name: '',
+  last_year_percentage: '',
   admission_date: new Date().toISOString().slice(0, 10),
-  remarks: ''
+  remarks: '',
+  parent_remarks: ''
 };
 
-export function StudentForm({ mode, studentId, courses, years, feeHeads, initial }: Props) {
+// Every field on this form is mandatory (per the office's data-entry policy)
+// except the Fee section below, which stays optional - it can always be
+// filled in later from the student's profile. Being mandatory only governs
+// what's needed to save; every field, including these, stays editable
+// afterwards from this same form in edit mode.
+export function StudentForm({ mode, studentId, courses, years, branches, batches, feeHeads, initial }: Props) {
   const router = useRouter();
   const [form, setForm] = useState<Record<string, any>>({ ...emptyForm, ...initial }); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [feeState, setFeeState] = useState<FeeEntryState | null>(null);
@@ -113,44 +126,77 @@ export function StudentForm({ mode, studentId, courses, years, feeHeads, initial
           <input className="input" required value={form.name} onChange={(e) => update('name', e.target.value)} />
         </div>
         <div>
-          <label className="label">Admission Number</label>
-          <input className="input" value={form.admission_number} onChange={(e) => update('admission_number', e.target.value)} />
+          <label className="label">Admission Number *</label>
+          <input className="input" required value={form.admission_number} onChange={(e) => update('admission_number', e.target.value)} />
         </div>
         <div>
-          <label className="label">Parent / Guardian Name</label>
-          <input className="input" value={form.guardian_name} onChange={(e) => update('guardian_name', e.target.value)} />
+          <label className="label">Parent / Guardian Name *</label>
+          <input className="input" required value={form.guardian_name} onChange={(e) => update('guardian_name', e.target.value)} />
         </div>
         <div>
-          <label className="label">Admission Date</label>
-          <input type="date" className="input" value={form.admission_date} onChange={(e) => update('admission_date', e.target.value)} />
+          <label className="label">Date of Birth *</label>
+          <input
+            type="date"
+            className="input"
+            required
+            value={form.date_of_birth ?? ''}
+            onChange={(e) => update('date_of_birth', e.target.value)}
+          />
         </div>
         <div>
-          <label className="label">Student Mobile</label>
-          <input className="input" value={form.student_mobile} onChange={(e) => update('student_mobile', e.target.value)} />
+          <label className="label">Admission Date *</label>
+          <input
+            type="date"
+            className="input"
+            required
+            value={form.admission_date}
+            onChange={(e) => update('admission_date', e.target.value)}
+          />
         </div>
         <div>
-          <label className="label">Parent Mobile</label>
-          <input className="input" value={form.parent_mobile} onChange={(e) => update('parent_mobile', e.target.value)} />
+          <label className="label">Student Mobile *</label>
+          <input className="input" required value={form.student_mobile} onChange={(e) => update('student_mobile', e.target.value)} />
         </div>
         <div>
-          <label className="label">Student Email</label>
-          <input type="email" className="input" value={form.student_email} onChange={(e) => update('student_email', e.target.value)} />
+          <label className="label">Parent Mobile *</label>
+          <input className="input" required value={form.parent_mobile} onChange={(e) => update('parent_mobile', e.target.value)} />
         </div>
         <div>
-          <label className="label">Parent Email</label>
-          <input type="email" className="input" value={form.parent_email} onChange={(e) => update('parent_email', e.target.value)} />
+          <label className="label">Student Email *</label>
+          <input
+            type="email"
+            className="input"
+            required
+            value={form.student_email}
+            onChange={(e) => update('student_email', e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="label">Parent Email *</label>
+          <input
+            type="email"
+            className="input"
+            required
+            value={form.parent_email}
+            onChange={(e) => update('parent_email', e.target.value)}
+          />
         </div>
         <div className="sm:col-span-2">
-          <label className="label">Address</label>
-          <textarea className="input" value={form.address} onChange={(e) => update('address', e.target.value)} />
+          <label className="label">Address *</label>
+          <textarea className="input" required value={form.address} onChange={(e) => update('address', e.target.value)} />
         </div>
       </fieldset>
 
       <fieldset className="grid grid-cols-1 gap-4 border-t border-slate-100 pt-4 sm:grid-cols-2">
         <legend className="mb-2 text-sm font-semibold text-slate-800">Academic placement</legend>
         <div>
-          <label className="label">Academic Year</label>
-          <select className="input" value={form.academic_year_id} onChange={(e) => update('academic_year_id', e.target.value)}>
+          <label className="label">Academic Year *</label>
+          <select
+            className="input"
+            required
+            value={form.academic_year_id ?? ''}
+            onChange={(e) => update('academic_year_id', e.target.value)}
+          >
             <option value="">Select…</option>
             {years.map((y) => (
               <option key={y.value} value={y.value}>
@@ -160,8 +206,8 @@ export function StudentForm({ mode, studentId, courses, years, feeHeads, initial
           </select>
         </div>
         <div>
-          <label className="label">Course / Class</label>
-          <select className="input" value={form.course_id} onChange={(e) => update('course_id', e.target.value)}>
+          <label className="label">Course / Class *</label>
+          <select className="input" required value={form.course_id ?? ''} onChange={(e) => update('course_id', e.target.value)}>
             <option value="">Select…</option>
             {courses.map((c) => (
               <option key={c.value} value={c.value}>
@@ -170,11 +216,58 @@ export function StudentForm({ mode, studentId, courses, years, feeHeads, initial
             ))}
           </select>
         </div>
+        <div>
+          <label className="label">Branch *</label>
+          <select className="input" required value={form.branch_id ?? ''} onChange={(e) => update('branch_id', e.target.value)}>
+            <option value="">Select…</option>
+            {branches.map((b) => (
+              <option key={b.value} value={b.value}>
+                {b.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="label">Batch *</label>
+          <select className="input" required value={form.batch_id ?? ''} onChange={(e) => update('batch_id', e.target.value)}>
+            <option value="">Select…</option>
+            {batches.map((b) => (
+              <option key={b.value} value={b.value}>
+                {b.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="label">School Name *</label>
+          <input className="input" required value={form.school_name ?? ''} onChange={(e) => update('school_name', e.target.value)} />
+        </div>
+        <div>
+          <label className="label">Last Year % *</label>
+          <input
+            className="input"
+            required
+            placeholder="e.g. 88% or First Class"
+            value={form.last_year_percentage ?? ''}
+            onChange={(e) => update('last_year_percentage', e.target.value)}
+          />
+        </div>
       </fieldset>
 
-      <div>
-        <label className="label">Remarks</label>
-        <textarea className="input" value={form.remarks} onChange={(e) => update('remarks', e.target.value)} />
+      <div className="grid grid-cols-1 gap-4 border-t border-slate-100 pt-4 sm:grid-cols-2">
+        <div>
+          <label className="label">Remarks *</label>
+          <textarea className="input" required value={form.remarks ?? ''} onChange={(e) => update('remarks', e.target.value)} />
+        </div>
+        <div>
+          <label className="label">Parent&apos;s Remarks *</label>
+          <textarea
+            className="input"
+            required
+            value={form.parent_remarks ?? ''}
+            onChange={(e) => update('parent_remarks', e.target.value)}
+          />
+        </div>
       </div>
 
       {mode === 'create' && feeHeads && (

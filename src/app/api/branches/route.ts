@@ -3,17 +3,15 @@ import { createListCreateHandlers } from '@/lib/api/masterCrud';
 
 export const runtime = 'nodejs';
 
-// Batch is just a type label (e.g. Morning / Evening) - not linked to
-// Course/Academic Year/Branch. See migration 0013.
 const insertSchema = z.object({
   name: z.string().min(1)
 });
 
 export const { GET, POST } = createListCreateHandlers({
-  table: 'batches',
+  table: 'branches',
   readPermission: 'masters.read',
   writePermission: 'masters.write',
   insertSchema,
   orderBy: { column: 'name', ascending: true },
-  auditModule: 'batches'
+  auditModule: 'branches'
 });
