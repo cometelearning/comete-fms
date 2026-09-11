@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const format = (searchParams.get('format') ?? 'csv') as 'csv' | 'xlsx' | 'pdf';
 
-    const courseIds = await resolveClassToCourseIds(supabase, session.orgId, searchParams.get('class_standard'));
+    const courseIds = await resolveClassToCourseIds(supabase, session.orgId, searchParams.get('class_id'));
 
     const query = buildCollectionQuery(supabase, {
       orgId: session.orgId,

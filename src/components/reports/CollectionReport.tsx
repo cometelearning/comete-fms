@@ -28,7 +28,7 @@ export function CollectionReport({
   const [from, setFrom] = useState(firstOfMonth());
   const [to, setTo] = useState(today());
   const [courseId, setCourseId] = useState('');
-  const [classStandard, setClassStandard] = useState('');
+  const [classId, setClassId] = useState('');
   const [mode, setMode] = useState('');
   const [createdBy, setCreatedBy] = useState('');
   const [rows, setRows] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -43,7 +43,7 @@ export function CollectionReport({
     if (from) params.set('from', from);
     if (to) params.set('to', to);
     if (courseId) params.set('course_id', courseId);
-    if (classStandard) params.set('class_standard', classStandard);
+    if (classId) params.set('class_id', classId);
     if (mode) params.set('payment_mode', mode);
     if (createdBy) params.set('created_by', createdBy);
     return params;
@@ -62,7 +62,7 @@ export function CollectionReport({
       })
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [from, to, courseId, classStandard, mode, createdBy, page]);
+  }, [from, to, courseId, classId, mode, createdBy, page]);
 
   const totalPages = Math.max(1, Math.ceil(count / pageSize));
 
@@ -99,7 +99,7 @@ export function CollectionReport({
         </div>
         <div>
           <label className="label">Class / Standard</label>
-          <select className="input" value={classStandard} onChange={(e) => { setClassStandard(e.target.value); setPage(1); }}>
+          <select className="input" value={classId} onChange={(e) => { setClassId(e.target.value); setPage(1); }}>
             <option value="">All</option>
             {classes.map((c) => (
               <option key={c.value} value={c.value}>{c.label}</option>

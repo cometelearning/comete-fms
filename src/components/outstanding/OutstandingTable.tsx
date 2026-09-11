@@ -17,7 +17,7 @@ export function OutstandingTable({ years, courses, classes, canExport }: Props) 
   const [q, setQ] = useState('');
   const [yearId, setYearId] = useState('');
   const [courseId, setCourseId] = useState('');
-  const [classStandard, setClassStandard] = useState('');
+  const [classId, setClassId] = useState('');
   const [overdueOnly, setOverdueOnly] = useState(false);
   const [rows, setRows] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [count, setCount] = useState(0);
@@ -30,7 +30,7 @@ export function OutstandingTable({ years, courses, classes, canExport }: Props) 
     if (q) params.set('q', q);
     if (yearId) params.set('academic_year_id', yearId);
     if (courseId) params.set('course_id', courseId);
-    if (classStandard) params.set('class_standard', classStandard);
+    if (classId) params.set('class_id', classId);
     if (overdueOnly) params.set('overdue_only', 'true');
     return params;
   }
@@ -50,7 +50,7 @@ export function OutstandingTable({ years, courses, classes, canExport }: Props) 
     }, 300);
     return () => clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, yearId, courseId, classStandard, overdueOnly, page]);
+  }, [q, yearId, courseId, classId, overdueOnly, page]);
 
   const totalPages = Math.max(1, Math.ceil(count / pageSize));
   const totalOutstanding = rows.reduce((sum, r) => sum + Number(r.outstanding_total), 0);
@@ -101,7 +101,7 @@ export function OutstandingTable({ years, courses, classes, canExport }: Props) 
             </option>
           ))}
         </select>
-        <select className="input" value={classStandard} onChange={(e) => { setClassStandard(e.target.value); setPage(1); }}>
+        <select className="input" value={classId} onChange={(e) => { setClassId(e.target.value); setPage(1); }}>
           <option value="">All classes</option>
           {classes.map((c) => (
             <option key={c.value} value={c.value}>

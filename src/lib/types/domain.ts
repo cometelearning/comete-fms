@@ -45,13 +45,32 @@ export interface Course {
   id: string;
   org_id: string;
   name: string;
+  // Frozen at whatever single class a course had before migration 0016 -
+  // Course Master no longer reads or writes this column. A course's actual
+  // class(es) live in the course_classes join table (many-to-many); see
+  // CourseClass below. Kept only for historical reference, never
+  // destructively removed.
   class_id: string | null;
-  // Denormalized from classes.name via class_id, kept in sync by a database
-  // trigger (see migration 0011). Report/dashboard filters match on this
-  // text column - do not write it directly, set class_id instead.
+  // Auto-maintained, comma-joined list of every class this course is
+  // currently tagged to via course_classes (e.g. "Class 11, Class 12"),
+  // kept in sync by database triggers (migrations 0011 + 0016). Used for
+  // *display only* (student profile, Student Record report, exports) -
+  // never for filtering, since text equality can't correctly match a
+  // multi-class course. Do not write it directly.
   class_standard: string | null;
   description: string | null;
   status: 'ACTIVE' | 'INACTIVE';
+}
+
+// Many-to-many link between a Course and every Class it's tagged to
+// (migration 0016) - lets the office reuse one course across several
+// classes instead of creating a duplicate per class.
+export interface CourseClass {
+  id: string;
+  org_id: string;
+  course_id: string;
+  class_id: string;
+  created_at: string;
 }
 
 export interface Branch {

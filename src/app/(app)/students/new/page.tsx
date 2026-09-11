@@ -12,7 +12,7 @@ export default async function NewStudentPage() {
   const [{ data: classes }, { data: courses }, { data: years }, { data: branches }, { data: batches }, { data: boards }, feeHeadsResult] =
     await Promise.all([
       supabase.from('classes').select('id,name').eq('status', 'ACTIVE').order('name'),
-      supabase.from('courses').select('id,name,class_id').eq('status', 'ACTIVE').order('name'),
+      supabase.from('courses').select('id,name,course_classes(class_id)').eq('status', 'ACTIVE').order('name'),
       supabase.from('academic_years').select('id,name').order('start_date', { ascending: false }),
       supabase.from('branches').select('id,name').eq('status', 'ACTIVE').order('name'),
       supabase.from('batches').select('id,name').eq('status', 'ACTIVE').order('name'),
@@ -28,7 +28,11 @@ export default async function NewStudentPage() {
       <StudentForm
         mode="create"
         classes={(classes ?? []).map((c) => ({ value: c.id, label: c.name }))}
-        courses={(courses ?? []).map((c) => ({ value: c.id, label: c.name, classId: c.class_id }))}
+        courses={(courses ?? []).map((c) => ({
+          value: c.id,
+          label: c.name,
+          classIds: (c.course_classes ?? []).map((cc: { class_id: string }) => cc.class_id)
+        }))}
         years={(years ?? []).map((y) => ({ value: y.id, label: y.name }))}
         branches={(branches ?? []).map((b) => ({ value: b.id, label: b.name }))}
         batches={(batches ?? []).map((b) => ({ value: b.id, label: b.name }))}

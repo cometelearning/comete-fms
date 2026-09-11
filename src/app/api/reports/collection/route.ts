@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const supabase = createClient();
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, Number(searchParams.get('page') ?? '1'));
-    const courseIds = await resolveClassToCourseIds(supabase, session.orgId, searchParams.get('class_standard'));
+    const courseIds = await resolveClassToCourseIds(supabase, session.orgId, searchParams.get('class_id'));
 
     const query = buildCollectionQuery(
       supabase,

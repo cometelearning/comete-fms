@@ -5,13 +5,16 @@ import { useRouter } from 'next/navigation';
 import type { FieldOption } from '@/components/masters/MasterCrudPage';
 import { FeeEntry, type FeeEntryState, type FeeHeadOption } from '@/components/fee/FeeEntry';
 
-// Course carries its Class so the Course select can be filtered down to
-// only the courses that belong to the Class picked above it (see
-// "Academic placement" below). class_id can be null for a legacy course
-// created before Class became mandatory on Course Master - such a course
-// simply won't appear under any class filter until Course Master is fixed.
+// Course carries every Class it's tagged to (a course can now belong to
+// more than one Class, e.g. the same "CA Foundation" course reused across
+// Class 11 and Class 12 - see Course Master) so the Course select can be
+// filtered down to only the courses tagged to the Class picked above it
+// (see "Academic placement" below). An empty classIds array means a legacy
+// course created before Class became mandatory on Course Master - such a
+// course simply won't appear under any class filter until Course Master is
+// fixed.
 export interface StudentCourseOption extends FieldOption {
-  classId: string | null;
+  classIds: string[];
 }
 
 interface Props {
@@ -53,14 +56,14 @@ const emptyForm = {
 // student's profile page, never edited here.
 //
 // Class and Course are two separate required selects, Course cascading from
-// Class (Course Master now requires every course to belong to a Class -
-// picking a Class here filters the Course list down to that Class's
-// courses). class_id itself is UI-only, never sent to the API and stripped
-// automatically if it were (neither the insert nor update schema on
-// /api/students accepts it) - the student record still stores only
-// course_id, since a course's class never changes independently of the
-// course (single source of truth is Course Master, not a second stored
-// copy on the student).
+// Class (Course Master now requires every course to be tagged to at least
+// one Class - picking a Class here filters the Course list down to the
+// courses tagged to that Class). class_id itself is UI-only, never sent to
+// the API and stripped automatically if it were (neither the insert nor
+// update schema on /api/students accepts it) - the student record still
+// stores only course_id, since a course's classes never change
+// independently of the course (single source of truth is Course Master,
+// not a second stored copy on the student).
 //
 // Every remaining field on this form is mandatory (per the office's
 // data-entry policy) except Student Mobile, Student Email, Parent Email
@@ -77,10 +80,14 @@ export function StudentForm({ mode, studentId, classes, courses, years, branches
     const base = { ...emptyForm, ...initial };
     // Edit mode: derive the initial Class selection from the student's
     // existing course, so the cascade starts pre-filled instead of forcing
-    // a reselect of a course that's already correct.
+    // a reselect of a course that's already correct. If the course is
+    // tagged to more than one Class, there's no way to know which one was
+    // originally intended (the student record only stores course_id) - the
+    // first one is picked as a reasonable default; the Course select still
+    // shows the right course either way, since it's tagged to that Class too.
     if (!base.class_id && base.course_id) {
       const current = courses.find((c) => c.value === base.course_id);
-      if (current?.classId) base.class_id = current.classId;
+      if (current?.classIds?.length) base.class_id = current.classIds[0];
     }
     return base;
   });
@@ -94,13 +101,16 @@ export function StudentForm({ mode, studentId, classes, courses, years, branches
   }
 
   function updateClass(classId: string) {
-    // Changing Class invalidates whatever Course was previously selected
-    // (it belonged to the old Class) - clear it so office staff can't
-    // accidentally submit a Course/Class combination that doesn't match.
-    setForm((f) => ({ ...f, class_id: classId, course_id: '' }));
+    // Changing Class only clears the previously selected Course if that
+    // course isn't tagged to the newly picked Class too - a course tagged
+    // to several Classes should stay selected when switching between them.
+    setForm((f) => {
+      const stillValid = f.course_id && courses.some((c) => c.value === f.course_id && c.classIds.includes(classId));
+      return { ...f, class_id: classId, course_id: stillValid ? f.course_id : '' };
+    });
   }
 
-  const coursesForClass = courses.filter((c) => c.classId === form.class_id);
+  const coursesForClass = courses.filter((c) => c.classIds.includes(form.class_id));
 
   function feeIsIncomplete() {
     if (!feeState || !feeState.hasAnyInput) return false;

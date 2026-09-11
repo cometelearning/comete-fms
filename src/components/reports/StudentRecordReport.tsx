@@ -26,7 +26,7 @@ export function StudentRecordReport({
   const [q, setQ] = useState('');
   const [yearId, setYearId] = useState('');
   const [courseId, setCourseId] = useState('');
-  const [classStandard, setClassStandard] = useState('');
+  const [classId, setClassId] = useState('');
   const [branchId, setBranchId] = useState('');
   const [batchId, setBatchId] = useState('');
   const [boardId, setBoardId] = useState('');
@@ -42,7 +42,7 @@ export function StudentRecordReport({
     if (q) params.set('q', q);
     if (yearId) params.set('academic_year_id', yearId);
     if (courseId) params.set('course_id', courseId);
-    if (classStandard) params.set('class_standard', classStandard);
+    if (classId) params.set('class_id', classId);
     if (branchId) params.set('branch_id', branchId);
     if (batchId) params.set('batch_id', batchId);
     if (boardId) params.set('board_id', boardId);
@@ -65,7 +65,7 @@ export function StudentRecordReport({
     }, 300);
     return () => clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, yearId, courseId, classStandard, branchId, batchId, boardId, status, page]);
+  }, [q, yearId, courseId, classId, branchId, batchId, boardId, status, page]);
 
   const totalPages = Math.max(1, Math.ceil(count / pageSize));
 
@@ -106,7 +106,7 @@ export function StudentRecordReport({
             <option key={y.value} value={y.value}>{y.label}</option>
           ))}
         </select>
-        <select className="input" value={classStandard} onChange={(e) => { setClassStandard(e.target.value); setPage(1); }}>
+        <select className="input" value={classId} onChange={(e) => { setClassId(e.target.value); setPage(1); }}>
           <option value="">All classes</option>
           {classes.map((c) => (
             <option key={c.value} value={c.value}>{c.label}</option>

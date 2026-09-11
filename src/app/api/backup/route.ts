@@ -13,6 +13,7 @@ const BACKUP_TABLES = [
   'branches',
   'classes',
   'courses',
+  'course_classes',
   'batches',
   'academic_years',
   'fee_heads',

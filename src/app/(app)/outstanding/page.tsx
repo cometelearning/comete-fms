@@ -8,21 +8,17 @@ export default async function OutstandingPage() {
   if (!session || !session.permissions.has('outstanding.view')) redirect('/dashboard');
 
   const supabase = createClient();
-  const [{ data: years }, { data: courses }] = await Promise.all([
+  const [{ data: years }, { data: courses }, { data: classes }] = await Promise.all([
     supabase.from('academic_years').select('id,name').order('start_date', { ascending: false }),
-    supabase.from('courses').select('id,name,class_standard').eq('status', 'ACTIVE').order('name')
+    supabase.from('courses').select('id,name').eq('status', 'ACTIVE').order('name'),
+    supabase.from('classes').select('id,name').eq('status', 'ACTIVE').order('name')
   ]);
-
-  const classOptions = Array.from(new Set((courses ?? []).map((c) => c.class_standard).filter((v): v is string => !!v))).map((v) => ({
-    value: v,
-    label: v
-  }));
 
   return (
     <OutstandingTable
       years={(years ?? []).map((y) => ({ value: y.id, label: y.name }))}
       courses={(courses ?? []).map((c) => ({ value: c.id, label: c.name }))}
-      classes={classOptions}
+      classes={(classes ?? []).map((c) => ({ value: c.id, label: c.name }))}
       canExport={session.permissions.has('exports.run')}
     />
   );
