@@ -113,7 +113,7 @@ export interface Student {
   admission_date: string;
   status: 'ACTIVE' | 'INACTIVE';
   remarks: string | null;
-  parent_remarks: string | null;
+  parent_remarks: string | null; // column kept (never destructively removed) but no longer shown/editable in the UI - student profile now has a single Remarks box
   created_at: string;
   updated_at: string;
 }

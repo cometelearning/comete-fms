@@ -20,14 +20,15 @@ export async function GET(_request: Request, { params }: { params: { id: string 
 
 // Every field on the Edit Student form is mandatory, same as creating one
 // (see src/app/api/students/route.ts), except student_mobile / student_email
-// / parent_email which stay optional - the office wants complete records
-// going forward, and fields stay editable indefinitely, they're just never
-// blank (aside from those three). The Edit Student form always submits the
-// full form, so this mirrors the insert schema rather than being a true
-// partial update; `status` is the one exception (not a field on the form
-// today).
+// / parent_email / last_year_percentage / remarks, which stay optional.
+// admission_number is NOT in this schema at all - like student_code, it is
+// system-generated once at creation and is never accepted from the client,
+// so it can never be changed via this endpoint (the `update` object below
+// only ever contains keys this schema parsed). The Edit Student form always
+// submits the full form, so this mirrors the insert schema rather than
+// being a true partial update; `status` is the one exception (not a field
+// on the form today).
 const updateSchema = z.object({
-  admission_number: z.string().min(1),
   name: z.string().min(2),
   guardian_name: z.string().min(1),
   date_of_birth: z.string().min(1),
@@ -42,24 +43,26 @@ const updateSchema = z.object({
   branch_id: z.string().uuid(),
   board_id: z.string().uuid(),
   school_name: z.string().min(1),
-  last_year_percentage: z.string().min(1),
+  last_year_percentage: z.string().optional().nullable(),
   admission_date: z.string().min(1),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
-  remarks: z.string().min(1),
-  parent_remarks: z.string().min(1)
+  remarks: z.string().optional().nullable()
 });
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   try {
     const session = await requirePermission('students.write');
     const body = updateSchema.parse(await request.json());
-    // student_mobile / student_email / parent_email are optional: normalize
-    // '' (an untouched field on the form) to null before writing.
+    // student_mobile / student_email / parent_email / last_year_percentage /
+    // remarks are optional: normalize '' (an untouched field on the form) to
+    // null before writing.
     const update: Record<string, unknown> = {
       ...body,
       student_mobile: body.student_mobile || null,
       student_email: body.student_email || null,
-      parent_email: body.parent_email || null
+      parent_email: body.parent_email || null,
+      last_year_percentage: body.last_year_percentage || null,
+      remarks: body.remarks || null
     };
     const supabase = createClient();
 

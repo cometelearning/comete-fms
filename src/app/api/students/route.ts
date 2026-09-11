@@ -55,16 +55,18 @@ export async function GET(request: Request) {
 }
 
 // Every field on the Add Student form is mandatory (office data-entry
-// policy) except the fee section (handled separately by /api/student-fees)
-// and student_mobile / student_email / parent_email, which the office
-// explicitly wants optional - not every student has their own phone or
-// email yet, and some parents don't have email. parent_mobile stays
-// mandatory - there must always be a way to reach a guardian. The
-// remaining selects are HTML `required` on the form, so the browser won't
-// submit them blank in normal use - this schema re-checks the same rule
-// server-side.
+// policy) except the fee section (handled separately by /api/student-fees),
+// student_mobile / student_email / parent_email (not every student has
+// their own phone or email yet, and some parents don't have email -
+// parent_mobile stays mandatory since there must always be a way to reach a
+// guardian), last_year_percentage (some admissions are new students with no
+// prior year result) and remarks. admission_number is NOT accepted here at
+// all - like student_code, it is system-generated server-side (see
+// generate_admission_number, migration 0015) and is never entered or edited
+// through the form. The remaining selects are HTML `required` on the form,
+// so the browser won't submit them blank in normal use - this schema
+// re-checks the same rule server-side.
 const insertSchema = z.object({
-  admission_number: z.string().min(1),
   name: z.string().min(2),
   guardian_name: z.string().min(1),
   date_of_birth: z.string().min(1),
@@ -79,10 +81,9 @@ const insertSchema = z.object({
   branch_id: z.string().uuid(),
   board_id: z.string().uuid(),
   school_name: z.string().min(1),
-  last_year_percentage: z.string().min(1),
+  last_year_percentage: z.string().optional(),
   admission_date: z.string().min(1),
-  remarks: z.string().min(1),
-  parent_remarks: z.string().min(1)
+  remarks: z.string().optional()
 });
 
 export async function POST(request: Request) {
@@ -91,15 +92,19 @@ export async function POST(request: Request) {
     const body = insertSchema.parse(await request.json());
     const supabase = createClient();
 
-    const { data: studentCode, error: codeError } = await supabase.rpc('generate_student_code', { p_org_id: session.orgId });
+    const [{ data: studentCode, error: codeError }, { data: admissionNumber, error: admissionError }] = await Promise.all([
+      supabase.rpc('generate_student_code', { p_org_id: session.orgId }),
+      supabase.rpc('generate_admission_number', { p_org_id: session.orgId })
+    ]);
     if (codeError) throw codeError;
+    if (admissionError) throw admissionError;
 
     const { data, error } = await supabase
       .from('students')
       .insert({
         org_id: session.orgId,
         student_code: studentCode,
-        admission_number: body.admission_number,
+        admission_number: admissionNumber,
         name: body.name,
         guardian_name: body.guardian_name,
         date_of_birth: body.date_of_birth,
@@ -114,10 +119,9 @@ export async function POST(request: Request) {
         branch_id: body.branch_id,
         board_id: body.board_id,
         school_name: body.school_name,
-        last_year_percentage: body.last_year_percentage,
+        last_year_percentage: body.last_year_percentage || null,
         admission_date: body.admission_date,
-        remarks: body.remarks,
-        parent_remarks: body.parent_remarks,
+        remarks: body.remarks || null,
         created_by: session.userId
       })
       .select()

@@ -216,20 +216,10 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
         )}
       </div>
 
-      {(student.remarks || student.parent_remarks) && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {student.remarks && (
-            <div className="card p-4 text-sm text-slate-600">
-              <span className="font-medium text-slate-800">Remarks: </span>
-              {student.remarks}
-            </div>
-          )}
-          {student.parent_remarks && (
-            <div className="card p-4 text-sm text-slate-600">
-              <span className="font-medium text-slate-800">Parent&apos;s Remarks: </span>
-              {student.parent_remarks}
-            </div>
-          )}
+      {student.remarks && (
+        <div className="card p-4 text-sm text-slate-600">
+          <span className="font-medium text-slate-800">Remarks: </span>
+          {student.remarks}
         </div>
       )}
     </div>

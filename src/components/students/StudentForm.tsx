@@ -18,7 +18,6 @@ interface Props {
 }
 
 const emptyForm = {
-  admission_number: '',
   name: '',
   guardian_name: '',
   date_of_birth: '',
@@ -35,18 +34,22 @@ const emptyForm = {
   school_name: '',
   last_year_percentage: '',
   admission_date: new Date().toISOString().slice(0, 10),
-  remarks: '',
-  parent_remarks: ''
+  remarks: ''
 };
 
-// Every field on this form is mandatory (per the office's data-entry policy)
-// except Student Mobile, Student Email and Parent Email (not every student
-// has their own phone/email, and some parents have no email - Parent
-// Mobile stays mandatory since there must always be a way to reach a
-// guardian), and the Fee section below, which stays optional and can always
-// be filled in later from the student's profile. Being mandatory only
-// governs what's needed to save; every field, including these, stays
-// editable afterwards from this same form in edit mode.
+// Admission Number is system-generated (like Student ID) and is not a field
+// on this form at all - it's assigned server-side on create and shown on the
+// student's profile page, never edited here.
+//
+// Every remaining field on this form is mandatory (per the office's
+// data-entry policy) except Student Mobile, Student Email, Parent Email
+// (not every student has their own phone/email, and some parents have no
+// email - Parent Mobile stays mandatory since there must always be a way to
+// reach a guardian), Last Year % (some students are new admissions with no
+// prior year result) and Remarks - plus the Fee section below, which stays
+// optional and can always be filled in later from the student's profile.
+// Being mandatory only governs what's needed to save; every field, including
+// these, stays editable afterwards from this same form in edit mode.
 export function StudentForm({ mode, studentId, courses, years, branches, batches, boards, feeHeads, initial }: Props) {
   const router = useRouter();
   const [form, setForm] = useState<Record<string, any>>({ ...emptyForm, ...initial }); // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -129,10 +132,6 @@ export function StudentForm({ mode, studentId, courses, years, branches, batches
         <div>
           <label className="label">Student Name *</label>
           <input className="input" required value={form.name} onChange={(e) => update('name', e.target.value)} />
-        </div>
-        <div>
-          <label className="label">Admission Number *</label>
-          <input className="input" required value={form.admission_number} onChange={(e) => update('admission_number', e.target.value)} />
         </div>
         <div>
           <label className="label">Parent / Guardian Name *</label>
@@ -247,10 +246,9 @@ export function StudentForm({ mode, studentId, courses, years, branches, batches
           <input className="input" required value={form.school_name ?? ''} onChange={(e) => update('school_name', e.target.value)} />
         </div>
         <div>
-          <label className="label">Last Year % *</label>
+          <label className="label">Last Year %</label>
           <input
             className="input"
-            required
             placeholder="e.g. 88% or First Class"
             value={form.last_year_percentage ?? ''}
             onChange={(e) => update('last_year_percentage', e.target.value)}
@@ -258,20 +256,9 @@ export function StudentForm({ mode, studentId, courses, years, branches, batches
         </div>
       </fieldset>
 
-      <div className="grid grid-cols-1 gap-4 border-t border-slate-100 pt-4 sm:grid-cols-2">
-        <div>
-          <label className="label">Remarks *</label>
-          <textarea className="input" required value={form.remarks ?? ''} onChange={(e) => update('remarks', e.target.value)} />
-        </div>
-        <div>
-          <label className="label">Parent&apos;s Remarks *</label>
-          <textarea
-            className="input"
-            required
-            value={form.parent_remarks ?? ''}
-            onChange={(e) => update('parent_remarks', e.target.value)}
-          />
-        </div>
+      <div className="border-t border-slate-100 pt-4">
+        <label className="label">Remarks</label>
+        <textarea className="input" value={form.remarks ?? ''} onChange={(e) => update('remarks', e.target.value)} />
       </div>
 
       {mode === 'create' && feeHeads && (
