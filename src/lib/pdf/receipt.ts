@@ -1,7 +1,7 @@
 import 'server-only';
 import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
 import { amountToWordsInr } from '@/lib/utils/numberToWords';
-import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils/format';
+import { formatCurrencyForPdf, formatDate, formatDateTime } from '@/lib/utils/format';
 
 export interface ReceiptPdfData {
   orgName: string;
@@ -99,17 +99,17 @@ export async function generateReceiptPdf(data: ReceiptPdfData): Promise<Uint8Arr
   y -= 16;
 
   text(data.installmentLabel ?? 'Fee Payment', MARGIN, y, { size: 11 });
-  text(formatCurrency(data.amountReceived), PAGE_W - MARGIN - 100, y, { size: 11, f: bold });
+  text(formatCurrencyForPdf(data.amountReceived), PAGE_W - MARGIN - 100, y, { size: 11, f: bold });
   y -= 26;
   line(y);
   y -= 20;
 
   const summaryRows: [string, string][] = [
-    ['Previous Outstanding', formatCurrency(data.previousOutstanding)],
-    ['Amount Received', formatCurrency(data.amountReceived)],
+    ['Previous Outstanding', formatCurrencyForPdf(data.previousOutstanding)],
+    ['Amount Received', formatCurrencyForPdf(data.amountReceived)],
     ['Payment Mode', data.paymentMode.replace('_', ' ')],
     ['Reference / Transaction No.', data.referenceNumber ?? '-'],
-    ['Current Outstanding', formatCurrency(data.currentOutstanding)]
+    ['Current Outstanding', formatCurrencyForPdf(data.currentOutstanding)]
   ];
   for (const [l, v] of summaryRows) {
     text(l, MARGIN, y, { size: 10, color: gray });

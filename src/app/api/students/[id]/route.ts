@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
-import { requirePermission } from '@/lib/auth/session';
+import { requirePermission, ForbiddenError } from '@/lib/auth/session';
 import { apiError } from '@/lib/api/handler';
 
 export const runtime = 'nodejs';
@@ -28,8 +28,15 @@ export async function GET(_request: Request, { params }: { params: { id: string 
 // Address is five structured fields (migration 0017) instead of one
 // free-text box; the old `address` column is simply never written to from
 // here. The Edit Student form always submits the full form, so this mirrors
-// the insert schema rather than being a true partial update; `status` is
-// the one exception (not a field on the form today).
+// the insert schema rather than being a true partial update.
+//
+// `status` is deliberately NOT in this schema (migration 0019) - activating/
+// deactivating a student is now a separate, Super-Admin-only action via
+// PATCH /api/students/[id]/status, per explicit user request that this
+// right stay narrower than the general students.write permission
+// Admin/Accountant already hold for everything else on this form. A
+// database trigger (enforce_student_status_change) backs this up even
+// against a raw table update that bypasses this route entirely.
 //
 // class_id IS part of this schema (migration 0018) for the same reason it's
 // in the insert schema - see the comment there. It's mandatory here too,
@@ -56,7 +63,6 @@ const updateSchema = z.object({
   school_name: z.string().min(1),
   last_year_percentage: z.string().optional().nullable(),
   admission_date: z.string().min(1),
-  status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
   remarks: z.string().optional().nullable()
 });
 
@@ -97,6 +103,38 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       p_new_value: data,
       p_reason: null
     });
+
+    return NextResponse.json({ data });
+  } catch (error) {
+    return apiError(error);
+  }
+}
+
+// Permanent deletion, migration 0019 - Super Admin only, per explicit user
+// request ("These rights should only be with super admin"). Deliberately
+// checked here at the app layer (a clean 403 before we even touch the DB)
+// AND inside delete_student_permanently() itself via is_super_admin() (so a
+// direct RPC call some other way is still blocked) AND via the students_delete
+// RLS policy (so even a raw REST DELETE against the table is blocked) - see
+// the migration's comments for why this needed three layers instead of one.
+// The RPC itself refuses to delete a student with any fee/payment history;
+// deactivate that student instead (PATCH /api/students/[id]/status).
+const deleteSchema = z.object({ reason: z.string().min(3, 'Please provide a reason.') });
+
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+  try {
+    const session = await requirePermission('students.write');
+    if (session.role.key !== 'super_admin') {
+      throw new ForbiddenError('Only Super Admin can permanently delete a student.');
+    }
+    const body = deleteSchema.parse(await request.json());
+    const supabase = createClient();
+
+    const { data, error } = await supabase.rpc('delete_student_permanently', {
+      p_student_id: params.id,
+      p_reason: body.reason
+    });
+    if (error) throw error;
 
     return NextResponse.json({ data });
   } catch (error) {

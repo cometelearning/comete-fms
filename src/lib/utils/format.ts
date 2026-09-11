@@ -7,6 +7,26 @@ export function formatCurrency(amount: number | null | undefined): string {
   }).format(n);
 }
 
+/**
+ * Same INR grouping/decimals as formatCurrency(), but spells out "Rs." instead
+ * of the Unicode Rupee sign (U+20B9). Use this - never formatCurrency() -
+ * anywhere text is drawn into a PDF via pdf-lib's standard 14 fonts
+ * (StandardFonts.Helvetica/HelveticaBold, used by src/lib/pdf/receipt.ts and
+ * src/lib/pdf/table.ts): those fonts only support WinAnsi encoding, which has
+ * no Rupee glyph, and pdf-lib throws ("WinAnsi cannot encode...") rather than
+ * silently dropping the character. The web UI, CSV and XLSX exports are fine
+ * with formatCurrency() as-is - browsers and Excel render "₹" correctly, so
+ * don't switch those over.
+ */
+export function formatCurrencyForPdf(amount: number | null | undefined): string {
+  const n = amount ?? 0;
+  const number = new Intl.NumberFormat('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(Math.abs(n));
+  return `${n < 0 ? '-' : ''}Rs. ${number}`;
+}
+
 export function formatDate(value: string | Date | null | undefined): string {
   if (!value) return '-';
   const d = typeof value === 'string' ? new Date(value) : value;

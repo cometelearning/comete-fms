@@ -4,7 +4,7 @@ import { apiError } from '@/lib/api/handler';
 import { buildStudentRecordQuery, fetchStudentFeeTotals } from '@/lib/reports/studentRecordQuery';
 import { toCsv, toXlsx, type ExportColumn } from '@/lib/export/tabular';
 import { generateTablePdf, type TableColumn } from '@/lib/pdf/table';
-import { formatCurrency, formatDate } from '@/lib/utils/format';
+import { formatCurrencyForPdf, formatDate } from '@/lib/utils/format';
 
 export const runtime = 'nodejs';
 const EXPORT_LIMIT = 5000;
@@ -99,9 +99,9 @@ export async function GET(request: Request) {
         columns,
         rows.map((r) => ({
           ...r,
-          total_fee: formatCurrency(Number(r.total_fee)),
-          paid: formatCurrency(Number(r.paid)),
-          outstanding: formatCurrency(Number(r.outstanding))
+          total_fee: formatCurrencyForPdf(Number(r.total_fee)),
+          paid: formatCurrencyForPdf(Number(r.paid)),
+          outstanding: formatCurrencyForPdf(Number(r.outstanding))
         }))
       );
       return new Response(Buffer.from(bytes), {

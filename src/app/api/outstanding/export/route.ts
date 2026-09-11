@@ -4,7 +4,7 @@ import { apiError } from '@/lib/api/handler';
 import { buildOutstandingQuery } from '@/lib/reports/outstandingQuery';
 import { toCsv, toXlsx, type ExportColumn } from '@/lib/export/tabular';
 import { generateTablePdf, type TableColumn } from '@/lib/pdf/table';
-import { formatCurrency, formatDate } from '@/lib/utils/format';
+import { formatCurrencyForPdf, formatDate } from '@/lib/utils/format';
 
 export const runtime = 'nodejs';
 
@@ -92,10 +92,10 @@ export async function GET(request: Request) {
         columns,
         rows.map((r) => ({
           ...r,
-          total_fee: formatCurrency(Number(r.total_fee)),
-          paid: formatCurrency(Number(r.paid)),
-          outstanding: formatCurrency(Number(r.outstanding)),
-          overdue: formatCurrency(Number(r.overdue)),
+          total_fee: formatCurrencyForPdf(Number(r.total_fee)),
+          paid: formatCurrencyForPdf(Number(r.paid)),
+          outstanding: formatCurrencyForPdf(Number(r.outstanding)),
+          overdue: formatCurrencyForPdf(Number(r.overdue)),
           next_due_date: r.next_due_date ? formatDate(r.next_due_date) : '-'
         }))
       );

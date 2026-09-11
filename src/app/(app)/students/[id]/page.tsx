@@ -7,6 +7,7 @@ import { formatCurrency, formatDate } from '@/lib/utils/format';
 import { FeeAccountDialog } from '@/components/students/FeeAccountDialog';
 import { GrantDiscountButton } from '@/components/students/GrantDiscountButton';
 import { PtmRecordDialog } from '@/components/ptm/PtmRecordDialog';
+import { StudentDangerZone } from '@/components/students/StudentDangerZone';
 
 export default async function StudentDetailPage({ params }: { params: { id: string } }) {
   const session = await getSession();
@@ -68,6 +69,10 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
           )}
         </div>
       </div>
+
+      {session.role.key === 'super_admin' && (
+        <StudentDangerZone studentId={student.id} studentName={student.name} status={student.status} />
+      )}
 
       <div className="card grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-4">
         <Info label="Guardian" value={student.guardian_name} />

@@ -4,7 +4,7 @@ import { apiError } from '@/lib/api/handler';
 import { buildCollectionQuery } from '@/lib/reports/collectionQuery';
 import { toCsv, toXlsx, type ExportColumn } from '@/lib/export/tabular';
 import { generateTablePdf, type TableColumn } from '@/lib/pdf/table';
-import { formatCurrency, formatDate } from '@/lib/utils/format';
+import { formatCurrencyForPdf, formatDate } from '@/lib/utils/format';
 
 export const runtime = 'nodejs';
 const EXPORT_LIMIT = 5000;
@@ -81,7 +81,7 @@ export async function GET(request: Request) {
         'COMETE LEARNING - Collection Report',
         `Generated ${formatDate(new Date())} - ${rows.length} transaction(s)`,
         columns,
-        rows.map((r) => ({ ...r, date: formatDate(r.date), amount: formatCurrency(Number(r.amount)) }))
+        rows.map((r) => ({ ...r, date: formatDate(r.date), amount: formatCurrencyForPdf(Number(r.amount)) }))
       );
       return new Response(Buffer.from(bytes), {
         headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="${filenameBase}.pdf"` }

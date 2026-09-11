@@ -52,7 +52,8 @@ export function apiError(error: unknown): NextResponse {
     CANNOT_EDIT_FEE_WITH_DISCOUNTS: 'This fee already has a discount recorded against it, so it cannot be edited. Add a new fee entry instead.',
     INVALID_DISCOUNT_TYPE: 'Please choose a valid discount type.',
     CANNOT_DISABLE_SELF: 'You cannot disable your own account.',
-    INVALID_ROLE: 'That role does not exist.'
+    INVALID_ROLE: 'That role does not exist.',
+    STUDENT_HAS_FEE_RECORDS: 'This student has a fee account, payment or receipt on record and cannot be permanently deleted. Deactivate the student instead to keep their financial history intact.'
   };
 
   for (const code of Object.keys(knownBusinessErrors)) {
@@ -71,22 +72,8 @@ export function apiError(error: unknown): NextResponse {
   // eslint-disable-next-line no-console
   console.error('[api-error]', error);
 
-  // TEMPORARY DEBUG (added to diagnose the Sep 11 PDF-export INTERNAL_ERROR
-  // reports - remove the `debug` field and this comment once root-caused;
-  // do not leave this shipped long-term, see spec #42 on not exposing raw
-  // errors to normal users).
-  const err = error as { code?: string; details?: string; hint?: string } | null;
   return NextResponse.json(
-    {
-      error: 'INTERNAL_ERROR',
-      message: 'Something went wrong on our end. The action was not completed. Please try again.',
-      debug: {
-        raw,
-        code: err?.code ?? null,
-        details: err?.details ?? null,
-        hint: err?.hint ?? null
-      }
-    },
+    { error: 'INTERNAL_ERROR', message: 'Something went wrong on our end. The action was not completed. Please try again.' },
     { status: 500 }
   );
 }
