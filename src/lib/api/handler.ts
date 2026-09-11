@@ -71,8 +71,22 @@ export function apiError(error: unknown): NextResponse {
   // eslint-disable-next-line no-console
   console.error('[api-error]', error);
 
+  // TEMPORARY DEBUG (added to diagnose the Sep 11 PDF-export INTERNAL_ERROR
+  // reports - remove the `debug` field and this comment once root-caused;
+  // do not leave this shipped long-term, see spec #42 on not exposing raw
+  // errors to normal users).
+  const err = error as { code?: string; details?: string; hint?: string } | null;
   return NextResponse.json(
-    { error: 'INTERNAL_ERROR', message: 'Something went wrong on our end. The action was not completed. Please try again.' },
+    {
+      error: 'INTERNAL_ERROR',
+      message: 'Something went wrong on our end. The action was not completed. Please try again.',
+      debug: {
+        raw,
+        code: err?.code ?? null,
+        details: err?.details ?? null,
+        hint: err?.hint ?? null
+      }
+    },
     { status: 500 }
   );
 }
