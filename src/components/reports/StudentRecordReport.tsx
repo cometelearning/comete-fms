@@ -10,17 +10,26 @@ export function StudentRecordReport({
   years,
   courses,
   classes,
+  branches,
+  batches,
+  boards,
   canExport
 }: {
   years: FieldOption[];
   courses: FieldOption[];
   classes: FieldOption[];
+  branches: FieldOption[];
+  batches: FieldOption[];
+  boards: FieldOption[];
   canExport: boolean;
 }) {
   const [q, setQ] = useState('');
   const [yearId, setYearId] = useState('');
   const [courseId, setCourseId] = useState('');
   const [classStandard, setClassStandard] = useState('');
+  const [branchId, setBranchId] = useState('');
+  const [batchId, setBatchId] = useState('');
+  const [boardId, setBoardId] = useState('');
   const [status, setStatus] = useState('');
   const [rows, setRows] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [count, setCount] = useState(0);
@@ -34,6 +43,9 @@ export function StudentRecordReport({
     if (yearId) params.set('academic_year_id', yearId);
     if (courseId) params.set('course_id', courseId);
     if (classStandard) params.set('class_standard', classStandard);
+    if (branchId) params.set('branch_id', branchId);
+    if (batchId) params.set('batch_id', batchId);
+    if (boardId) params.set('board_id', boardId);
     if (status) params.set('status', status);
     return params;
   }
@@ -53,7 +65,7 @@ export function StudentRecordReport({
     }, 300);
     return () => clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, yearId, courseId, classStandard, status, page]);
+  }, [q, yearId, courseId, classStandard, branchId, batchId, boardId, status, page]);
 
   const totalPages = Math.max(1, Math.ceil(count / pageSize));
 
@@ -68,7 +80,9 @@ export function StudentRecordReport({
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Student Record</h1>
-          <p className="text-sm text-slate-500">Every student, filterable by academic year, class and course, with a live fee summary.</p>
+          <p className="text-sm text-slate-500">
+            Every student, filterable by academic year, class, course, branch, batch, board and status, with a live fee summary.
+          </p>
         </div>
         {canExport && (
           <div className="flex gap-2">
@@ -79,7 +93,7 @@ export function StudentRecordReport({
         )}
       </div>
 
-      <div className="card mb-4 grid grid-cols-1 gap-3 p-4 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="card mb-4 grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
         <input
           className="input"
           placeholder="Search name / Student ID…"
@@ -104,6 +118,24 @@ export function StudentRecordReport({
             <option key={c.value} value={c.value}>{c.label}</option>
           ))}
         </select>
+        <select className="input" value={branchId} onChange={(e) => { setBranchId(e.target.value); setPage(1); }}>
+          <option value="">All branches</option>
+          {branches.map((b) => (
+            <option key={b.value} value={b.value}>{b.label}</option>
+          ))}
+        </select>
+        <select className="input" value={batchId} onChange={(e) => { setBatchId(e.target.value); setPage(1); }}>
+          <option value="">All batches</option>
+          {batches.map((b) => (
+            <option key={b.value} value={b.value}>{b.label}</option>
+          ))}
+        </select>
+        <select className="input" value={boardId} onChange={(e) => { setBoardId(e.target.value); setPage(1); }}>
+          <option value="">All boards</option>
+          {boards.map((b) => (
+            <option key={b.value} value={b.value}>{b.label}</option>
+          ))}
+        </select>
         <select className="input" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
           <option value="">All statuses</option>
           <option value="ACTIVE">Active</option>
@@ -125,6 +157,7 @@ export function StudentRecordReport({
                 <th>Course</th>
                 <th>Class</th>
                 <th>Academic Year</th>
+                <th>Branch</th>
                 <th className="text-right">Total Fee</th>
                 <th className="text-right">Paid</th>
                 <th className="text-right">Outstanding</th>
@@ -143,6 +176,7 @@ export function StudentRecordReport({
                   <td>{r.courses?.name ?? '-'}</td>
                   <td>{r.courses?.class_standard ?? '-'}</td>
                   <td>{r.academic_years?.name ?? '-'}</td>
+                  <td>{r.branches?.name ?? '-'}</td>
                   <td className="text-right">{formatCurrency(r.fee_totals?.totalFee ?? 0)}</td>
                   <td className="text-right text-emerald-700">{formatCurrency(r.fee_totals?.paidTotal ?? 0)}</td>
                   <td className="text-right text-red-700">{formatCurrency(r.fee_totals?.outstandingTotal ?? 0)}</td>

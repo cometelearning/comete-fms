@@ -23,6 +23,9 @@ export async function GET(request: Request) {
         academicYearId: searchParams.get('academic_year_id'),
         courseId: searchParams.get('course_id'),
         courseIds,
+        branchId: searchParams.get('branch_id'),
+        batchId: searchParams.get('batch_id'),
+        boardId: searchParams.get('board_id'),
         status: searchParams.get('status'),
         q: searchParams.get('q')
       },

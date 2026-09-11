@@ -8,14 +8,16 @@ export default async function EditStudentPage({ params }: { params: { id: string
   if (!session || !session.permissions.has('students.write')) redirect(`/students/${params.id}`);
 
   const supabase = createClient();
-  const [{ data: student }, { data: courses }, { data: years }, { data: branches }, { data: batches }, { data: boards }] = await Promise.all([
-    supabase.from('students').select('*').eq('id', params.id).eq('org_id', session.orgId).single(),
-    supabase.from('courses').select('id,name').eq('status', 'ACTIVE').order('name'),
-    supabase.from('academic_years').select('id,name').order('start_date', { ascending: false }),
-    supabase.from('branches').select('id,name').eq('status', 'ACTIVE').order('name'),
-    supabase.from('batches').select('id,name').eq('status', 'ACTIVE').order('name'),
-    supabase.from('boards').select('id,name').eq('status', 'ACTIVE').order('name')
-  ]);
+  const [{ data: student }, { data: classes }, { data: courses }, { data: years }, { data: branches }, { data: batches }, { data: boards }] =
+    await Promise.all([
+      supabase.from('students').select('*').eq('id', params.id).eq('org_id', session.orgId).single(),
+      supabase.from('classes').select('id,name').eq('status', 'ACTIVE').order('name'),
+      supabase.from('courses').select('id,name,class_id').eq('status', 'ACTIVE').order('name'),
+      supabase.from('academic_years').select('id,name').order('start_date', { ascending: false }),
+      supabase.from('branches').select('id,name').eq('status', 'ACTIVE').order('name'),
+      supabase.from('batches').select('id,name').eq('status', 'ACTIVE').order('name'),
+      supabase.from('boards').select('id,name').eq('status', 'ACTIVE').order('name')
+    ]);
 
   if (!student) notFound();
 
@@ -26,7 +28,8 @@ export default async function EditStudentPage({ params }: { params: { id: string
         mode="edit"
         studentId={student.id}
         initial={student}
-        courses={(courses ?? []).map((c) => ({ value: c.id, label: c.name }))}
+        classes={(classes ?? []).map((c) => ({ value: c.id, label: c.name }))}
+        courses={(courses ?? []).map((c) => ({ value: c.id, label: c.name, classId: c.class_id }))}
         years={(years ?? []).map((y) => ({ value: y.id, label: y.name }))}
         branches={(branches ?? []).map((b) => ({ value: b.id, label: b.name }))}
         batches={(batches ?? []).map((b) => ({ value: b.id, label: b.name }))}

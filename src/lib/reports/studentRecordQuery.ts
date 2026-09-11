@@ -6,12 +6,15 @@ export interface StudentRecordFilters {
   academicYearId?: string | null;
   courseId?: string | null;
   courseIds?: string[] | null; // resolved from a class/standard filter - see classFilter.ts
+  branchId?: string | null;
+  batchId?: string | null;
+  boardId?: string | null;
   status?: string | null;
   q?: string | null;
 }
 
 const SELECT =
-  'id, student_code, admission_number, name, student_mobile, parent_mobile, status, academic_year_id, course_id, courses(name, class_standard), academic_years(name)';
+  'id, student_code, admission_number, name, student_mobile, parent_mobile, status, academic_year_id, course_id, branch_id, batch_id, board_id, courses(name, class_standard), academic_years(name), branches(name), batches(name), boards(name)';
 
 export function buildStudentRecordQuery(supabase: SupabaseClient, filters: StudentRecordFilters, opts?: { count?: 'exact' }) {
   let query = supabase.from('students').select(SELECT, opts?.count ? { count: opts.count } : undefined).eq('org_id', filters.orgId);
@@ -23,6 +26,9 @@ export function buildStudentRecordQuery(supabase: SupabaseClient, filters: Stude
     // set must be empty too - filter on an id that can never match.
     query = query.in('course_id', filters.courseIds.length > 0 ? filters.courseIds : ['00000000-0000-0000-0000-000000000000']);
   }
+  if (filters.branchId) query = query.eq('branch_id', filters.branchId);
+  if (filters.batchId) query = query.eq('batch_id', filters.batchId);
+  if (filters.boardId) query = query.eq('board_id', filters.boardId);
   if (filters.status) query = query.eq('status', filters.status);
   if (filters.q) {
     const like = `%${filters.q}%`;

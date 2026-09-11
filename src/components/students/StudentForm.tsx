@@ -5,10 +5,20 @@ import { useRouter } from 'next/navigation';
 import type { FieldOption } from '@/components/masters/MasterCrudPage';
 import { FeeEntry, type FeeEntryState, type FeeHeadOption } from '@/components/fee/FeeEntry';
 
+// Course carries its Class so the Course select can be filtered down to
+// only the courses that belong to the Class picked above it (see
+// "Academic placement" below). class_id can be null for a legacy course
+// created before Class became mandatory on Course Master - such a course
+// simply won't appear under any class filter until Course Master is fixed.
+export interface StudentCourseOption extends FieldOption {
+  classId: string | null;
+}
+
 interface Props {
   mode: 'create' | 'edit';
   studentId?: string;
-  courses: FieldOption[];
+  classes: FieldOption[];
+  courses: StudentCourseOption[];
   years: FieldOption[];
   branches: FieldOption[];
   batches: FieldOption[];
@@ -26,6 +36,7 @@ const emptyForm = {
   student_email: '',
   parent_email: '',
   address: '',
+  class_id: '',
   course_id: '',
   academic_year_id: '',
   branch_id: '',
@@ -41,6 +52,16 @@ const emptyForm = {
 // on this form at all - it's assigned server-side on create and shown on the
 // student's profile page, never edited here.
 //
+// Class and Course are two separate required selects, Course cascading from
+// Class (Course Master now requires every course to belong to a Class -
+// picking a Class here filters the Course list down to that Class's
+// courses). class_id itself is UI-only, never sent to the API and stripped
+// automatically if it were (neither the insert nor update schema on
+// /api/students accepts it) - the student record still stores only
+// course_id, since a course's class never changes independently of the
+// course (single source of truth is Course Master, not a second stored
+// copy on the student).
+//
 // Every remaining field on this form is mandatory (per the office's
 // data-entry policy) except Student Mobile, Student Email, Parent Email
 // (not every student has their own phone/email, and some parents have no
@@ -50,9 +71,19 @@ const emptyForm = {
 // optional and can always be filled in later from the student's profile.
 // Being mandatory only governs what's needed to save; every field, including
 // these, stays editable afterwards from this same form in edit mode.
-export function StudentForm({ mode, studentId, courses, years, branches, batches, boards, feeHeads, initial }: Props) {
+export function StudentForm({ mode, studentId, classes, courses, years, branches, batches, boards, feeHeads, initial }: Props) {
   const router = useRouter();
-  const [form, setForm] = useState<Record<string, any>>({ ...emptyForm, ...initial }); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const [form, setForm] = useState<Record<string, any>>(() => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    const base = { ...emptyForm, ...initial };
+    // Edit mode: derive the initial Class selection from the student's
+    // existing course, so the cascade starts pre-filled instead of forcing
+    // a reselect of a course that's already correct.
+    if (!base.class_id && base.course_id) {
+      const current = courses.find((c) => c.value === base.course_id);
+      if (current?.classId) base.class_id = current.classId;
+    }
+    return base;
+  });
   const [feeState, setFeeState] = useState<FeeEntryState | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +92,15 @@ export function StudentForm({ mode, studentId, courses, years, branches, batches
   function update(key: string, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
   }
+
+  function updateClass(classId: string) {
+    // Changing Class invalidates whatever Course was previously selected
+    // (it belonged to the old Class) - clear it so office staff can't
+    // accidentally submit a Course/Class combination that doesn't match.
+    setForm((f) => ({ ...f, class_id: classId, course_id: '' }));
+  }
+
+  const coursesForClass = courses.filter((c) => c.classId === form.class_id);
 
   function feeIsIncomplete() {
     if (!feeState || !feeState.hasAnyInput) return false;
@@ -198,10 +238,27 @@ export function StudentForm({ mode, studentId, courses, years, branches, batches
           </select>
         </div>
         <div>
-          <label className="label">Course / Class *</label>
-          <select className="input" required value={form.course_id ?? ''} onChange={(e) => update('course_id', e.target.value)}>
+          <label className="label">Class *</label>
+          <select className="input" required value={form.class_id ?? ''} onChange={(e) => updateClass(e.target.value)}>
             <option value="">Select…</option>
-            {courses.map((c) => (
+            {classes.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="label">Course *</label>
+          <select
+            className="input"
+            required
+            disabled={!form.class_id}
+            value={form.course_id ?? ''}
+            onChange={(e) => update('course_id', e.target.value)}
+          >
+            <option value="">{form.class_id ? 'Select…' : 'Select a Class first'}</option>
+            {coursesForClass.map((c) => (
               <option key={c.value} value={c.value}>
                 {c.label}
               </option>

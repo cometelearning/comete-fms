@@ -16,6 +16,12 @@ export const runtime = 'nodejs';
 // conversion is done explicitly below, only when the key is actually
 // present. class_standard is never accepted from the client: it's derived
 // from class_id by a database trigger (migration 0011).
+//
+// class_id stays .optional() here (unlike the POST insertSchema, which
+// requires it outright) purely so the Activate/Deactivate `{status}`-only
+// PATCH keeps working - Class is still required in practice on every real
+// edit, because the Edit Course form's `required` select attribute won't
+// submit the form without one.
 const updateSchema = z.object({
   name: z.string().min(1).optional(),
   class_id: z.string().uuid().optional().or(z.literal('')),

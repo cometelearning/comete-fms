@@ -18,12 +18,12 @@ export default async function CoursesPage() {
   return (
     <MasterCrudPage
       title="Courses"
-      description="Every course you run, e.g. CA Foundation, Class 12 Commerce. Pick a Class from Class Master to group several courses under the same class for reporting."
+      description="Every course you run, e.g. CA Foundation, Class 12 Commerce. Every course belongs to one Class from Class Master - the Add/Edit Student form uses this link to only show the courses that belong to the Class picked there."
       apiPath="/api/courses"
       canWrite={session.permissions.has('masters.write')}
       fields={[
         { name: 'name', label: 'Course name', type: 'text', required: true },
-        { name: 'class_id', label: 'Class', type: 'select', options: classOptions },
+        { name: 'class_id', label: 'Class', type: 'select', options: classOptions, required: true },
         { name: 'description', label: 'Description', type: 'textarea' }
       ]}
       columns={[

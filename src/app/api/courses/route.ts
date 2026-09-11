@@ -7,14 +7,20 @@ import { apiError } from '@/lib/api/handler';
 export const runtime = 'nodejs';
 
 // Not built on the generic createListCreateHandlers() factory (unlike the
-// other master tables) because class_id needs the same '' -> null
-// normalization as the PATCH route (see courses/[id]/route.ts) which the
-// factory's generic insert type can't express cleanly. class_standard is
-// never accepted from the client: it's derived from class_id by a database
-// trigger (migration 0011).
+// other master tables) because class_id needs the same handling as the
+// PATCH route (see courses/[id]/route.ts) which the factory's generic
+// insert type can't express cleanly. class_standard is never accepted from
+// the client: it's derived from class_id by a database trigger (migration
+// 0011). class_id is mandatory here (every course must belong to a Class,
+// per the office's request - the Add/Edit Student form filters its Course
+// list by the Class picked there, so a classless course could never be
+// selected on a new student) - POST always receives the full Add Course
+// form, so this can safely require it outright, unlike the PATCH schema
+// below which must also accept a partial Activate/Deactivate `{status}`
+// body.
 const insertSchema = z.object({
   name: z.string().min(1),
-  class_id: z.string().uuid().optional().or(z.literal('')),
+  class_id: z.string().uuid(),
   description: z.string().optional()
 });
 
