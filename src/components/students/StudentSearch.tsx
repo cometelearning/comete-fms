@@ -19,6 +19,9 @@ interface StudentRow {
 
 export function StudentSearch({ canWrite }: { canWrite: boolean }) {
   const [q, setQ] = useState('');
+  // Defaults to ACTIVE so inactive/deactivated students are hidden unless
+  // explicitly asked for (explicit user request).
+  const [status, setStatus] = useState('ACTIVE');
   const [rows, setRows] = useState<StudentRow[]>([]);
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(1);
@@ -30,6 +33,7 @@ export function StudentSearch({ canWrite }: { canWrite: boolean }) {
       setLoading(true);
       const params = new URLSearchParams();
       if (q) params.set('q', q);
+      params.set('status', status);
       params.set('page', String(page));
       fetch(`/api/students?${params.toString()}`)
         .then((r) => r.json())
@@ -40,7 +44,7 @@ export function StudentSearch({ canWrite }: { canWrite: boolean }) {
         .finally(() => setLoading(false));
     }, 300);
     return () => clearTimeout(handle);
-  }, [q, page]);
+  }, [q, status, page]);
 
   const totalPages = Math.max(1, Math.ceil(count / pageSize));
 
@@ -58,9 +62,9 @@ export function StudentSearch({ canWrite }: { canWrite: boolean }) {
         )}
       </div>
 
-      <div className="card mb-4 p-4">
+      <div className="card mb-4 flex flex-col gap-3 p-4 sm:flex-row">
         <input
-          className="input"
+          className="input sm:flex-1"
           placeholder="Search students…"
           value={q}
           onChange={(e) => {
@@ -68,6 +72,18 @@ export function StudentSearch({ canWrite }: { canWrite: boolean }) {
             setPage(1);
           }}
         />
+        <select
+          className="input sm:w-56"
+          value={status}
+          onChange={(e) => {
+            setStatus(e.target.value);
+            setPage(1);
+          }}
+        >
+          <option value="ACTIVE">Active students</option>
+          <option value="INACTIVE">Inactive students</option>
+          <option value="ALL">All (incl. Inactive)</option>
+        </select>
       </div>
 
       <div className="card overflow-x-auto">
@@ -111,21 +127,19 @@ export function StudentSearch({ canWrite }: { canWrite: boolean }) {
         )}
       </div>
 
-      {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-          <span>
-            Page {page} of {totalPages} ({count} students)
-          </span>
-          <div className="flex gap-2">
-            <button className="btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              Previous
-            </button>
-            <button className="btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-              Next
-            </button>
-          </div>
+      <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+        <span>
+          Page {page} of {totalPages} ({count} students)
+        </span>
+        <div className="flex gap-2">
+          <button className="btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+            Previous
+          </button>
+          <button className="btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+            Next
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

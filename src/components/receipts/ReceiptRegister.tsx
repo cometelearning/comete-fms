@@ -3,12 +3,16 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
-import { formatCurrency, formatDateTime } from '@/lib/utils/format';
+import { formatCurrency, formatDateTime, studentDisplayName } from '@/lib/utils/format';
 
 export function ReceiptRegister({ initialStudentId, initialStatus }: { initialStudentId?: string; initialStatus?: string }) {
   const [q, setQ] = useState('');
   const [status, setStatus] = useState(initialStatus ?? '');
   const [mode, setMode] = useState('');
+  // Defaults to ACTIVE so inactive students are hidden unless explicitly
+  // asked for (explicit user request). Ignored by the API when a specific
+  // student is being viewed (initialStudentId set).
+  const [studentStatus, setStudentStatus] = useState('ACTIVE');
   const [rows, setRows] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(1);
@@ -23,6 +27,7 @@ export function ReceiptRegister({ initialStudentId, initialStatus }: { initialSt
       if (status) params.set('status', status);
       if (mode) params.set('payment_mode', mode);
       if (initialStudentId) params.set('student_id', initialStudentId);
+      params.set('student_status', studentStatus);
       params.set('page', String(page));
       fetch(`/api/receipts?${params.toString()}`)
         .then((r) => r.json())
@@ -33,7 +38,7 @@ export function ReceiptRegister({ initialStudentId, initialStatus }: { initialSt
         .finally(() => setLoading(false));
     }, 250);
     return () => clearTimeout(handle);
-  }, [q, status, mode, page, initialStudentId]);
+  }, [q, status, mode, studentStatus, page, initialStudentId]);
 
   const totalPages = Math.max(1, Math.ceil(count / pageSize));
 
@@ -59,6 +64,13 @@ export function ReceiptRegister({ initialStudentId, initialStatus }: { initialSt
             </option>
           ))}
         </select>
+        {!initialStudentId && (
+          <select className="input sm:w-56" value={studentStatus} onChange={(e) => { setStudentStatus(e.target.value); setPage(1); }}>
+            <option value="ACTIVE">Active students</option>
+            <option value="INACTIVE">Inactive students</option>
+            <option value="ALL">All (incl. Inactive)</option>
+          </select>
+        )}
       </div>
 
       <div className="card overflow-x-auto">
@@ -87,7 +99,7 @@ export function ReceiptRegister({ initialStudentId, initialStatus }: { initialSt
                   <td className="font-mono text-xs">{r.receipt_number}</td>
                   <td>{formatDateTime(r.issued_at)}</td>
                   <td>
-                    {r.payments?.students?.name}
+                    {studentDisplayName(r.payments?.students?.name, r.payments?.students?.classes?.name)}
                     <p className="font-mono text-xs text-slate-400">{r.payments?.students?.student_code}</p>
                   </td>
                   <td>{r.payments?.students?.courses?.name ?? '-'}</td>
@@ -109,21 +121,19 @@ export function ReceiptRegister({ initialStudentId, initialStatus }: { initialSt
         )}
       </div>
 
-      {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-          <span>
-            Page {page} of {totalPages} ({count} receipts)
-          </span>
-          <div className="flex gap-2">
-            <button className="btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              Previous
-            </button>
-            <button className="btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-              Next
-            </button>
-          </div>
+      <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+        <span>
+          Page {page} of {totalPages} ({count} receipts)
+        </span>
+        <div className="flex gap-2">
+          <button className="btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+            Previous
+          </button>
+          <button className="btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+            Next
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

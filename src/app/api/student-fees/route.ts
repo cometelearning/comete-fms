@@ -16,15 +16,19 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const q = searchParams.get('q')?.trim();
     const status = searchParams.get('status');
+    const studentStatus = searchParams.get('student_status');
     const page = Math.max(1, Number(searchParams.get('page') ?? '1'));
 
     let query = supabase
       .from('student_fee_summary')
-      .select('*, students!inner(name,student_code), fee_structures(name), academic_years(name)', { count: 'exact' })
+      .select('*, students!inner(name,student_code,status,classes(name)), fee_structures(name), academic_years(name)', { count: 'exact' })
       .eq('org_id', session.orgId);
 
     if (q) query = query.or(`name.ilike.%${q}%,student_code.ilike.%${q}%`, { foreignTable: 'students' });
     if (status) query = query.eq('overall_status', status);
+    // Default-hide inactive students unless a filter specifically asks for
+    // them (explicit user request).
+    if (studentStatus !== 'ALL') query = query.eq('students.status', studentStatus || 'ACTIVE');
 
     query = query.order('student_id', { ascending: true }).range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 

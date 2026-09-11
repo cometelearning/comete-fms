@@ -24,7 +24,8 @@ export async function GET(request: Request) {
       courseId: searchParams.get('course_id'),
       classId: searchParams.get('class_id'),
       paymentMode: searchParams.get('payment_mode'),
-      createdBy: searchParams.get('created_by')
+      createdBy: searchParams.get('created_by'),
+      studentStatus: searchParams.get('student_status')
     });
 
     const { data, error } = await query.order('payment_date', { ascending: false }).limit(EXPORT_LIMIT);

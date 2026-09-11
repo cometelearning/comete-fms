@@ -41,7 +41,10 @@ export async function GET(request: Request) {
     if (courseId) query = query.eq('course_id', courseId);
     if (batchId) query = query.eq('batch_id', batchId);
     if (academicYearId) query = query.eq('academic_year_id', academicYearId);
-    if (status) query = query.eq('status', status);
+    // Default-hide inactive students unless a filter specifically asks for
+    // them (explicit user request): no status param, or an explicit
+    // ACTIVE/INACTIVE, filters normally; 'ALL' shows both.
+    if (status !== 'ALL') query = query.eq('status', status || 'ACTIVE');
 
     query = query.order('created_at', { ascending: false }).range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 

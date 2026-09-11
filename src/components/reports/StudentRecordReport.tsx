@@ -30,7 +30,9 @@ export function StudentRecordReport({
   const [branchId, setBranchId] = useState('');
   const [batchId, setBatchId] = useState('');
   const [boardId, setBoardId] = useState('');
-  const [status, setStatus] = useState('');
+  // Defaults to ACTIVE so inactive students are hidden unless explicitly
+  // asked for (explicit user request).
+  const [status, setStatus] = useState('ACTIVE');
   const [rows, setRows] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(1);
@@ -137,9 +139,9 @@ export function StudentRecordReport({
           ))}
         </select>
         <select className="input" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
-          <option value="">All statuses</option>
           <option value="ACTIVE">Active</option>
           <option value="INACTIVE">Inactive</option>
+          <option value="ALL">All (incl. Inactive)</option>
         </select>
       </div>
 
@@ -195,15 +197,13 @@ export function StudentRecordReport({
         )}
       </div>
 
-      {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-          <span>Page {page} of {totalPages} ({count} students)</span>
-          <div className="flex gap-2">
-            <button className="btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</button>
-            <button className="btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
-          </div>
+      <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+        <span>Page {page} of {totalPages} ({count} students)</span>
+        <div className="flex gap-2">
+          <button className="btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</button>
+          <button className="btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

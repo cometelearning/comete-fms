@@ -25,7 +25,8 @@ export async function GET(request: Request) {
       classId: searchParams.get('class_id'),
       q: searchParams.get('q'),
       overdueOnly: searchParams.get('overdue_only') === 'true',
-      minAmount: searchParams.get('min_amount') ? Number(searchParams.get('min_amount')) : null
+      minAmount: searchParams.get('min_amount') ? Number(searchParams.get('min_amount')) : null,
+      studentStatus: searchParams.get('student_status')
     });
 
     const { data, error } = await query.order('outstanding_total', { ascending: false }).limit(EXPORT_LIMIT);

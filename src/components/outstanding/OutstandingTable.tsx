@@ -19,6 +19,9 @@ export function OutstandingTable({ years, courses, classes, canExport }: Props) 
   const [courseId, setCourseId] = useState('');
   const [classId, setClassId] = useState('');
   const [overdueOnly, setOverdueOnly] = useState(false);
+  // Defaults to ACTIVE so inactive students are hidden unless explicitly
+  // asked for (explicit user request).
+  const [studentStatus, setStudentStatus] = useState('ACTIVE');
   const [rows, setRows] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(1);
@@ -32,6 +35,7 @@ export function OutstandingTable({ years, courses, classes, canExport }: Props) 
     if (courseId) params.set('course_id', courseId);
     if (classId) params.set('class_id', classId);
     if (overdueOnly) params.set('overdue_only', 'true');
+    params.set('student_status', studentStatus);
     return params;
   }
 
@@ -50,7 +54,7 @@ export function OutstandingTable({ years, courses, classes, canExport }: Props) 
     }, 300);
     return () => clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, yearId, courseId, classId, overdueOnly, page]);
+  }, [q, yearId, courseId, classId, overdueOnly, studentStatus, page]);
 
   const totalPages = Math.max(1, Math.ceil(count / pageSize));
   const totalOutstanding = rows.reduce((sum, r) => sum + Number(r.outstanding_total), 0);
@@ -83,7 +87,7 @@ export function OutstandingTable({ years, courses, classes, canExport }: Props) 
         )}
       </div>
 
-      <div className="card mb-4 grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="card mb-4 grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-6">
         <input className="input" placeholder="Search student…" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} />
         <select className="input" value={yearId} onChange={(e) => { setYearId(e.target.value); setPage(1); }}>
           <option value="">All academic years</option>
@@ -113,6 +117,11 @@ export function OutstandingTable({ years, courses, classes, canExport }: Props) 
           <input type="checkbox" checked={overdueOnly} onChange={(e) => { setOverdueOnly(e.target.checked); setPage(1); }} />
           Overdue only
         </label>
+        <select className="input" value={studentStatus} onChange={(e) => { setStudentStatus(e.target.value); setPage(1); }}>
+          <option value="ACTIVE">Active students</option>
+          <option value="INACTIVE">Inactive students</option>
+          <option value="ALL">All (incl. Inactive)</option>
+        </select>
       </div>
 
       <div className="card overflow-x-auto">
@@ -174,21 +183,19 @@ export function OutstandingTable({ years, courses, classes, canExport }: Props) 
         )}
       </div>
 
-      {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-          <span>
-            Page {page} of {totalPages} ({count} students)
-          </span>
-          <div className="flex gap-2">
-            <button className="btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              Previous
-            </button>
-            <button className="btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-              Next
-            </button>
-          </div>
+      <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+        <span>
+          Page {page} of {totalPages} ({count} students)
+        </span>
+        <div className="flex gap-2">
+          <button className="btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+            Previous
+          </button>
+          <button className="btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+            Next
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

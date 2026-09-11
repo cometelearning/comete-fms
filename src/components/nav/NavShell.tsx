@@ -20,14 +20,22 @@ interface NavItem {
 // spec's "keep navigation clean, no unnecessary items" instruction - but
 // each one is a real, permission-gated CRUD page (masters.read/write),
 // they just need to be reachable to actually use the app end-to-end.
+//
+// "Academics" is a separate group for the fee-management-adjacent academic
+// data the user asked for ("Go with Foundation Firsts and also move PTM to
+// academic section"): Subject Master, Teacher Master, and PTM - moved out
+// of its old top-level slot into here. A group's own top-level `permission`
+// is no longer what decides whether it's shown (see the filtering logic
+// below) - a group appears whenever at least one of its children is
+// visible, so mixed-permission groups like this one (PTM only needs
+// students.read; Subject/Teacher Master need masters.read) still work
+// correctly for a custom role that has one but not the other.
 const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', permission: 'dashboard.view' },
   { href: '/students', label: 'Students', permission: 'students.read' },
-  { href: '/ptm', label: 'PTM', permission: 'students.read' },
   {
     href: '/academic-years',
     label: 'Masters',
-    permission: 'masters.read',
     children: [
       { href: '/academic-years', label: 'Academic Years', permission: 'masters.read' },
       { href: '/boards', label: 'Boards', permission: 'masters.read' },
@@ -36,6 +44,15 @@ const NAV_ITEMS: NavItem[] = [
       { href: '/courses', label: 'Courses', permission: 'masters.read' },
       { href: '/batches', label: 'Batches', permission: 'masters.read' },
       { href: '/fee-heads', label: 'Fee Heads', permission: 'masters.read' }
+    ]
+  },
+  {
+    href: '/subjects',
+    label: 'Academics',
+    children: [
+      { href: '/subjects', label: 'Subject Master', permission: 'masters.read' },
+      { href: '/teachers', label: 'Teacher Master', permission: 'masters.read' },
+      { href: '/ptm', label: 'PTM', permission: 'students.read' }
     ]
   },
   { href: '/student-fees', label: 'Student Fees', permission: 'student_fees.read' },
@@ -62,13 +79,21 @@ export function NavShell({
   const pathname = usePathname();
   const router = useRouter();
   const permSet = new Set(permissions);
-  const items = NAV_ITEMS.filter((i) => !i.permission || permSet.has(i.permission)).map((i) => ({
+  // A plain (non-group) item still needs its own permission; a group is
+  // filtered by whether it ends up with any visible children at all,
+  // rather than a single permission on the group itself - so a group whose
+  // children need different permissions (e.g. Academics: PTM needs
+  // students.read, Subject/Teacher Master need masters.read) still shows up
+  // correctly for a role that has only some of those.
+  const items = NAV_ITEMS.map((i) => ({
     ...i,
     children: i.children?.filter((c) => !c.permission || permSet.has(c.permission))
-  }));
+  })).filter((i) => (i.children ? i.children.length > 0 : !i.permission || permSet.has(i.permission)));
   const isWithin = (href: string) => pathname === href || pathname?.startsWith(href + '/');
-  const [mastersOpen, setMastersOpen] = useState(() =>
-    ['/academic-years', '/boards', '/branches', '/classes', '/courses', '/batches', '/fee-heads'].some((h) => isWithin(h))
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(
+      NAV_ITEMS.filter((i) => i.children).map((i) => [i.label, (i.children ?? []).some((c) => isWithin(c.href))])
+    )
   );
 
   async function signOut() {
@@ -112,20 +137,21 @@ export function NavShell({
           {items.map((item) => {
             if (item.children && item.children.length > 0) {
               const groupActive = item.children.some((c) => isWithin(c.href));
+              const isOpen = openGroups[item.label] ?? false;
               return (
                 <div key={item.label}>
                   <button
                     type="button"
-                    onClick={() => setMastersOpen((v) => !v)}
-                    aria-expanded={mastersOpen}
+                    onClick={() => setOpenGroups((v) => ({ ...v, [item.label]: !v[item.label] }))}
+                    aria-expanded={isOpen}
                     className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm font-medium ${
                       groupActive ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-100'
                     }`}
                   >
                     {item.label}
-                    <ChevronIcon open={mastersOpen} />
+                    <ChevronIcon open={isOpen} />
                   </button>
-                  {mastersOpen && (
+                  {isOpen && (
                     <div className="ml-3 mt-1 flex flex-col gap-1 border-l border-slate-100 pl-3">
                       {item.children.map((child) => {
                         const active = isWithin(child.href);

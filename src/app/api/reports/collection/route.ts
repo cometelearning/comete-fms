@@ -23,7 +23,8 @@ export async function GET(request: Request) {
         courseId: searchParams.get('course_id'),
         classId: searchParams.get('class_id'),
         paymentMode: searchParams.get('payment_mode'),
-        createdBy: searchParams.get('created_by')
+        createdBy: searchParams.get('created_by'),
+        studentStatus: searchParams.get('student_status')
       },
       { count: 'exact' }
     );
@@ -39,7 +40,8 @@ export async function GET(request: Request) {
       courseId: searchParams.get('course_id'),
       classId: searchParams.get('class_id'),
       paymentMode: searchParams.get('payment_mode'),
-      createdBy: searchParams.get('created_by')
+      createdBy: searchParams.get('created_by'),
+      studentStatus: searchParams.get('student_status')
     }).select('amount');
     const { data: allAmounts } = await totalQuery;
     const total = (allAmounts ?? []).reduce((sum: number, r: any) => sum + Number(r.amount), 0); // eslint-disable-line @typescript-eslint/no-explicit-any

@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
-import { formatCurrency, formatDate } from '@/lib/utils/format';
+import { formatCurrency, formatDate, studentDisplayName } from '@/lib/utils/format';
 
 export function DiscountRegister({ canReverse }: { canReverse: boolean }) {
   const [status, setStatus] = useState('');
+  // Defaults to ACTIVE so inactive students are hidden unless explicitly
+  // asked for (explicit user request).
+  const [studentStatus, setStudentStatus] = useState('ACTIVE');
   const [rows, setRows] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(1);
@@ -18,6 +21,7 @@ export function DiscountRegister({ canReverse }: { canReverse: boolean }) {
     setLoading(true);
     const params = new URLSearchParams();
     if (status) params.set('status', status);
+    params.set('student_status', studentStatus);
     params.set('page', String(page));
     fetch(`/api/reports/discounts?${params.toString()}`)
       .then((r) => r.json())
@@ -28,7 +32,7 @@ export function DiscountRegister({ canReverse }: { canReverse: boolean }) {
       .finally(() => setLoading(false));
   }
 
-  useEffect(load, [status, page]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(load, [status, studentStatus, page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function confirmReverse(id: string) {
     if (!reason.trim()) return;
@@ -51,11 +55,16 @@ export function DiscountRegister({ canReverse }: { canReverse: boolean }) {
         <p className="text-sm text-slate-500">Every discount, concession and waiver granted, with who granted it and why.</p>
       </div>
 
-      <div className="card mb-4 p-4">
+      <div className="card mb-4 flex flex-col gap-3 p-4 sm:flex-row">
         <select className="input sm:w-56" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
           <option value="">All statuses</option>
           <option value="ACTIVE">Active</option>
           <option value="REVERSED">Reversed</option>
+        </select>
+        <select className="input sm:w-56" value={studentStatus} onChange={(e) => { setStudentStatus(e.target.value); setPage(1); }}>
+          <option value="ACTIVE">Active students</option>
+          <option value="INACTIVE">Inactive students</option>
+          <option value="ALL">All (incl. Inactive)</option>
         </select>
       </div>
 
@@ -82,7 +91,7 @@ export function DiscountRegister({ canReverse }: { canReverse: boolean }) {
               {rows.map((d) => (
                 <tr key={d.id}>
                   <td>{formatDate(d.created_at)}</td>
-                  <td>{d.student_fee_accounts?.students?.name}</td>
+                  <td>{studentDisplayName(d.student_fee_accounts?.students?.name, d.student_fee_accounts?.students?.classes?.name)}</td>
                   <td>{d.discount_type === 'PERCENTAGE' ? `${d.value}%` : 'Fixed'}</td>
                   <td className="text-right">{formatCurrency(d.amount)}</td>
                   <td>{d.reason}</td>
@@ -122,15 +131,13 @@ export function DiscountRegister({ canReverse }: { canReverse: boolean }) {
         )}
       </div>
 
-      {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-          <span>Page {page} of {totalPages}</span>
-          <div className="flex gap-2">
-            <button className="btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</button>
-            <button className="btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
-          </div>
+      <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+        <span>Page {page} of {totalPages} ({count} discounts)</span>
+        <div className="flex gap-2">
+          <button className="btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</button>
+          <button className="btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

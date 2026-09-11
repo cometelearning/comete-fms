@@ -3,11 +3,14 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
-import { formatCurrency } from '@/lib/utils/format';
+import { formatCurrency, studentDisplayName } from '@/lib/utils/format';
 
 export function StudentFeesList() {
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
+  // Defaults to ACTIVE so inactive students are hidden unless explicitly
+  // asked for (explicit user request).
+  const [studentStatus, setStudentStatus] = useState('ACTIVE');
   const [rows, setRows] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(1);
@@ -20,6 +23,7 @@ export function StudentFeesList() {
       const params = new URLSearchParams();
       if (q) params.set('q', q);
       if (status) params.set('status', status);
+      params.set('student_status', studentStatus);
       params.set('page', String(page));
       fetch(`/api/student-fees?${params.toString()}`)
         .then((r) => r.json())
@@ -30,7 +34,7 @@ export function StudentFeesList() {
         .finally(() => setLoading(false));
     }, 300);
     return () => clearTimeout(handle);
-  }, [q, status, page]);
+  }, [q, status, studentStatus, page]);
 
   const totalPages = Math.max(1, Math.ceil(count / pageSize));
 
@@ -65,6 +69,18 @@ export function StudentFeesList() {
           <option value="PARTIALLY_PAID">Partially Paid</option>
           <option value="PENDING">Pending</option>
         </select>
+        <select
+          className="input sm:w-56"
+          value={studentStatus}
+          onChange={(e) => {
+            setStudentStatus(e.target.value);
+            setPage(1);
+          }}
+        >
+          <option value="ACTIVE">Active students</option>
+          <option value="INACTIVE">Inactive students</option>
+          <option value="ALL">All (incl. Inactive)</option>
+        </select>
       </div>
 
       <div className="card overflow-x-auto">
@@ -90,7 +106,7 @@ export function StudentFeesList() {
               {rows.map((r) => (
                 <tr key={r.student_fee_account_id}>
                   <td>
-                    <p className="font-medium text-slate-900">{r.students?.name}</p>
+                    <p className="font-medium text-slate-900">{studentDisplayName(r.students?.name, r.students?.classes?.name)}</p>
                     <p className="font-mono text-xs text-slate-400">{r.students?.student_code}</p>
                   </td>
                   <td>{r.fee_structures?.name}</td>
@@ -113,21 +129,19 @@ export function StudentFeesList() {
         )}
       </div>
 
-      {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-          <span>
-            Page {page} of {totalPages} ({count} accounts)
-          </span>
-          <div className="flex gap-2">
-            <button className="btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              Previous
-            </button>
-            <button className="btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-              Next
-            </button>
-          </div>
+      <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+        <span>
+          Page {page} of {totalPages} ({count} accounts)
+        </span>
+        <div className="flex gap-2">
+          <button className="btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+            Previous
+          </button>
+          <button className="btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+            Next
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

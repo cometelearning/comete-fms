@@ -31,6 +31,9 @@ export function CollectionReport({
   const [classId, setClassId] = useState('');
   const [mode, setMode] = useState('');
   const [createdBy, setCreatedBy] = useState('');
+  // Defaults to ACTIVE so inactive students are hidden unless explicitly
+  // asked for (explicit user request).
+  const [studentStatus, setStudentStatus] = useState('ACTIVE');
   const [rows, setRows] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [count, setCount] = useState(0);
   const [total, setTotal] = useState(0);
@@ -46,6 +49,7 @@ export function CollectionReport({
     if (classId) params.set('class_id', classId);
     if (mode) params.set('payment_mode', mode);
     if (createdBy) params.set('created_by', createdBy);
+    params.set('student_status', studentStatus);
     return params;
   }
 
@@ -62,7 +66,7 @@ export function CollectionReport({
       })
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [from, to, courseId, classId, mode, createdBy, page]);
+  }, [from, to, courseId, classId, mode, createdBy, studentStatus, page]);
 
   const totalPages = Math.max(1, Math.ceil(count / pageSize));
 
@@ -133,6 +137,14 @@ export function CollectionReport({
             ))}
           </select>
         </div>
+        <div>
+          <label className="label">Student Status</label>
+          <select className="input" value={studentStatus} onChange={(e) => { setStudentStatus(e.target.value); setPage(1); }}>
+            <option value="ACTIVE">Active students</option>
+            <option value="INACTIVE">Inactive students</option>
+            <option value="ALL">All (incl. Inactive)</option>
+          </select>
+        </div>
       </div>
 
       <div className="card mb-4 p-4">
@@ -177,15 +189,13 @@ export function CollectionReport({
         )}
       </div>
 
-      {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-          <span>Page {page} of {totalPages} ({count} transactions)</span>
-          <div className="flex gap-2">
-            <button className="btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</button>
-            <button className="btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
-          </div>
+      <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+        <span>Page {page} of {totalPages} ({count} transactions)</span>
+        <div className="flex gap-2">
+          <button className="btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</button>
+          <button className="btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

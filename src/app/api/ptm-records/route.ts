@@ -20,16 +20,24 @@ export async function GET(request: Request) {
     const studentId = searchParams.get('student_id');
     const q = searchParams.get('q')?.trim();
     const attended = searchParams.get('attended');
+    const studentStatus = searchParams.get('student_status');
     const page = Math.max(1, Number(searchParams.get('page') ?? '1'));
 
     let query = supabase
       .from('ptm_records')
-      .select('id, student_id, ptm_date, attended, parent_remarks, counsellor_remarks, created_at, students(name, student_code)', {
-        count: 'exact'
-      })
+      .select(
+        'id, student_id, ptm_date, attended, parent_remarks, counsellor_remarks, created_at, students!inner(name, student_code, status, classes(name))',
+        { count: 'exact' }
+      )
       .eq('org_id', session.orgId);
 
     if (studentId) query = query.eq('student_id', studentId);
+    // Default-hide inactive students unless a filter specifically asks for
+    // them (explicit user request); skipped when a specific student_id is
+    // requested, same as receipts.
+    if (!studentId && studentStatus !== 'ALL') {
+      query = query.eq('students.status', studentStatus || 'ACTIVE');
+    }
     if (attended === 'true') query = query.eq('attended', true);
     if (attended === 'false') query = query.eq('attended', false);
     if (q) {

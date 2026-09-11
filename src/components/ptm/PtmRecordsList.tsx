@@ -1,12 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { formatDate } from '@/lib/utils/format';
+import { formatDate, studentDisplayName } from '@/lib/utils/format';
 import { PtmRecordDialog } from './PtmRecordDialog';
 
 export function PtmRecordsList({ canWrite }: { canWrite: boolean }) {
   const [q, setQ] = useState('');
   const [attended, setAttended] = useState('');
+  // Defaults to ACTIVE so inactive students are hidden unless explicitly
+  // asked for (explicit user request).
+  const [studentStatus, setStudentStatus] = useState('ACTIVE');
   const [rows, setRows] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(1);
@@ -19,6 +22,7 @@ export function PtmRecordsList({ canWrite }: { canWrite: boolean }) {
       const params = new URLSearchParams();
       if (q) params.set('q', q);
       if (attended) params.set('attended', attended);
+      params.set('student_status', studentStatus);
       params.set('page', String(page));
       fetch(`/api/ptm-records?${params.toString()}`)
         .then((r) => r.json())
@@ -29,7 +33,7 @@ export function PtmRecordsList({ canWrite }: { canWrite: boolean }) {
         .finally(() => setLoading(false));
     }, 300);
     return () => clearTimeout(handle);
-  }, [q, attended, page]);
+  }, [q, attended, studentStatus, page]);
 
   const totalPages = Math.max(1, Math.ceil(count / pageSize));
 
@@ -65,6 +69,18 @@ export function PtmRecordsList({ canWrite }: { canWrite: boolean }) {
           <option value="true">Attended</option>
           <option value="false">Not Attended</option>
         </select>
+        <select
+          className="input"
+          value={studentStatus}
+          onChange={(e) => {
+            setStudentStatus(e.target.value);
+            setPage(1);
+          }}
+        >
+          <option value="ACTIVE">Active students</option>
+          <option value="INACTIVE">Inactive students</option>
+          <option value="ALL">All (incl. Inactive)</option>
+        </select>
       </div>
 
       <div className="card overflow-x-auto">
@@ -88,7 +104,7 @@ export function PtmRecordsList({ canWrite }: { canWrite: boolean }) {
               {rows.map((r) => (
                 <tr key={r.id}>
                   <td>
-                    <p className="font-medium text-slate-900">{r.students?.name}</p>
+                    <p className="font-medium text-slate-900">{studentDisplayName(r.students?.name, r.students?.classes?.name)}</p>
                     <p className="font-mono text-xs text-slate-400">{r.students?.student_code}</p>
                   </td>
                   <td>{formatDate(r.ptm_date)}</td>
@@ -127,21 +143,19 @@ export function PtmRecordsList({ canWrite }: { canWrite: boolean }) {
         )}
       </div>
 
-      {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-          <span>
-            Page {page} of {totalPages} ({count} records)
-          </span>
-          <div className="flex gap-2">
-            <button className="btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              Previous
-            </button>
-            <button className="btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-              Next
-            </button>
-          </div>
+      <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+        <span>
+          Page {page} of {totalPages} ({count} records)
+        </span>
+        <div className="flex gap-2">
+          <button className="btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+            Previous
+          </button>
+          <button className="btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+            Next
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

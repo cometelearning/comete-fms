@@ -29,7 +29,13 @@ export function buildStudentRecordQuery(supabase: SupabaseClient, filters: Stude
   if (filters.branchId) query = query.eq('branch_id', filters.branchId);
   if (filters.batchId) query = query.eq('batch_id', filters.batchId);
   if (filters.boardId) query = query.eq('board_id', filters.boardId);
-  if (filters.status) query = query.eq('status', filters.status);
+  // Default-hide inactive students unless a filter specifically asks for
+  // them (explicit user request) - 'ALL' shows both, an explicit status
+  // shows just that one, and no status at all (the normal case) falls back
+  // to ACTIVE rather than showing everything.
+  if (filters.status !== 'ALL') {
+    query = query.eq('status', filters.status || 'ACTIVE');
+  }
   if (filters.q) {
     const like = `%${filters.q}%`;
     query = query.or(`name.ilike.${like},student_code.ilike.${like},admission_number.ilike.${like}`);

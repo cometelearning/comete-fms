@@ -19,12 +19,13 @@ export async function GET(request: Request) {
     const from = searchParams.get('from');
     const to = searchParams.get('to');
     const q = searchParams.get('q')?.trim();
+    const studentStatus = searchParams.get('student_status');
     const page = Math.max(1, Number(searchParams.get('page') ?? '1'));
 
     let query = supabase
       .from('receipts')
       .select(
-        'id, receipt_number, issued_at, status, pdf_status, cancellation_reason, payments!inner(amount, payment_mode, reference_number, payment_date, student_id, students(name, student_code, course_id, courses(name), batches(name))), profiles!receipts_created_by_fkey(full_name)',
+        'id, receipt_number, issued_at, status, pdf_status, cancellation_reason, payments!inner(amount, payment_mode, reference_number, payment_date, student_id, students!inner(name, student_code, status, course_id, courses(name), batches(name), classes(name))), profiles!receipts_created_by_fkey(full_name)',
         { count: 'exact' }
       )
       .eq('org_id', session.orgId);
@@ -35,6 +36,15 @@ export async function GET(request: Request) {
     if (mode) query = query.eq('payments.payment_mode', mode);
     if (studentId) query = query.eq('payments.student_id', studentId);
     if (q) query = query.ilike('receipt_number', `%${q}%`);
+    // Default-hide inactive students unless a filter specifically asks for
+    // them (explicit user request). Cancelled receipts stay visible either
+    // way - this only affects which STUDENT's receipts show by default.
+    // Skipped when a specific student_id is requested (e.g. "View Receipts"
+    // from that student's own profile) - an inactive student's own receipt
+    // history must still be reachable from their profile.
+    if (!studentId && studentStatus !== 'ALL') {
+      query = query.eq('payments.students.status', studentStatus || 'ACTIVE');
+    }
 
     query = query.order('issued_at', { ascending: false }).range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 

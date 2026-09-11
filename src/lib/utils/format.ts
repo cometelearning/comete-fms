@@ -47,6 +47,19 @@ export function formatDateTime(value: string | Date | null | undefined): string 
   }).format(d);
 }
 
+/**
+ * Suffixes a student's name with their class, e.g. "Rahul Sharma (Class 10)"
+ * - per the explicit user request that "where in any report student name is
+ * displayed it should be suffixed by the class... for the easy referals and
+ * use". Only used where a report doesn't already show Class as its own
+ * dedicated column (Collection Report, Student Record Report and
+ * Outstanding already do, so they don't need this).
+ */
+export function studentDisplayName(name: string | null | undefined, className: string | null | undefined): string {
+  const n = name ?? '';
+  return className ? `${n} (${className})` : n;
+}
+
 export function statusBadgeColor(status: string): string {
   switch (status) {
     case 'PAID':
