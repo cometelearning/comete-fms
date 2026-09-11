@@ -12,6 +12,7 @@ interface Props {
   years: FieldOption[];
   branches: FieldOption[];
   batches: FieldOption[];
+  boards: FieldOption[];
   feeHeads?: FeeHeadOption[];
   initial?: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
@@ -30,6 +31,7 @@ const emptyForm = {
   academic_year_id: '',
   branch_id: '',
   batch_id: '',
+  board_id: '',
   school_name: '',
   last_year_percentage: '',
   admission_date: new Date().toISOString().slice(0, 10),
@@ -38,11 +40,14 @@ const emptyForm = {
 };
 
 // Every field on this form is mandatory (per the office's data-entry policy)
-// except the Fee section below, which stays optional - it can always be
-// filled in later from the student's profile. Being mandatory only governs
-// what's needed to save; every field, including these, stays editable
-// afterwards from this same form in edit mode.
-export function StudentForm({ mode, studentId, courses, years, branches, batches, feeHeads, initial }: Props) {
+// except Student Mobile, Student Email and Parent Email (not every student
+// has their own phone/email, and some parents have no email - Parent
+// Mobile stays mandatory since there must always be a way to reach a
+// guardian), and the Fee section below, which stays optional and can always
+// be filled in later from the student's profile. Being mandatory only
+// governs what's needed to save; every field, including these, stays
+// editable afterwards from this same form in edit mode.
+export function StudentForm({ mode, studentId, courses, years, branches, batches, boards, feeHeads, initial }: Props) {
   const router = useRouter();
   const [form, setForm] = useState<Record<string, any>>({ ...emptyForm, ...initial }); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [feeState, setFeeState] = useState<FeeEntryState | null>(null);
@@ -154,32 +159,20 @@ export function StudentForm({ mode, studentId, courses, years, branches, batches
           />
         </div>
         <div>
-          <label className="label">Student Mobile *</label>
-          <input className="input" required value={form.student_mobile} onChange={(e) => update('student_mobile', e.target.value)} />
+          <label className="label">Student Mobile</label>
+          <input className="input" value={form.student_mobile} onChange={(e) => update('student_mobile', e.target.value)} />
         </div>
         <div>
           <label className="label">Parent Mobile *</label>
           <input className="input" required value={form.parent_mobile} onChange={(e) => update('parent_mobile', e.target.value)} />
         </div>
         <div>
-          <label className="label">Student Email *</label>
-          <input
-            type="email"
-            className="input"
-            required
-            value={form.student_email}
-            onChange={(e) => update('student_email', e.target.value)}
-          />
+          <label className="label">Student Email</label>
+          <input type="email" className="input" value={form.student_email} onChange={(e) => update('student_email', e.target.value)} />
         </div>
         <div>
-          <label className="label">Parent Email *</label>
-          <input
-            type="email"
-            className="input"
-            required
-            value={form.parent_email}
-            onChange={(e) => update('parent_email', e.target.value)}
-          />
+          <label className="label">Parent Email</label>
+          <input type="email" className="input" value={form.parent_email} onChange={(e) => update('parent_email', e.target.value)} />
         </div>
         <div className="sm:col-span-2">
           <label className="label">Address *</label>
@@ -232,6 +225,17 @@ export function StudentForm({ mode, studentId, courses, years, branches, batches
           <select className="input" required value={form.batch_id ?? ''} onChange={(e) => update('batch_id', e.target.value)}>
             <option value="">Select…</option>
             {batches.map((b) => (
+              <option key={b.value} value={b.value}>
+                {b.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="label">Board *</label>
+          <select className="input" required value={form.board_id ?? ''} onChange={(e) => update('board_id', e.target.value)}>
+            <option value="">Select…</option>
+            {boards.map((b) => (
               <option key={b.value} value={b.value}>
                 {b.label}
               </option>

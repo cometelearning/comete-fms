@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/Badge';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
 import { FeeAccountDialog } from '@/components/students/FeeAccountDialog';
 import { GrantDiscountButton } from '@/components/students/GrantDiscountButton';
+import { PtmRecordDialog } from '@/components/ptm/PtmRecordDialog';
 
 export default async function StudentDetailPage({ params }: { params: { id: string } }) {
   const session = await getSession();
@@ -17,16 +18,20 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
   if (!student) notFound();
 
   const canEnterFee = session.permissions.has('student_fees.write');
-  const [{ data: course }, { data: year }, { data: batch }, { data: branch }, { data: feeSummaries }, feeHeadsResult] = await Promise.all([
-    student.course_id
-      ? supabase.from('courses').select('name,class_standard').eq('id', student.course_id).single()
-      : Promise.resolve({ data: null }),
-    student.academic_year_id ? supabase.from('academic_years').select('name').eq('id', student.academic_year_id).single() : Promise.resolve({ data: null }),
-    student.batch_id ? supabase.from('batches').select('name').eq('id', student.batch_id).single() : Promise.resolve({ data: null }),
-    student.branch_id ? supabase.from('branches').select('name').eq('id', student.branch_id).single() : Promise.resolve({ data: null }),
-    supabase.from('student_fee_summary').select('*, fee_structures(name)').eq('student_id', params.id),
-    canEnterFee ? supabase.from('fee_heads').select('id,name').eq('status', 'ACTIVE').eq('org_id', session.orgId) : Promise.resolve({ data: null })
-  ]);
+  const canWritePtm = session.permissions.has('students.write');
+  const [{ data: course }, { data: year }, { data: batch }, { data: branch }, { data: board }, { data: feeSummaries }, feeHeadsResult, { data: ptmRecords }] =
+    await Promise.all([
+      student.course_id
+        ? supabase.from('courses').select('name,class_standard').eq('id', student.course_id).single()
+        : Promise.resolve({ data: null }),
+      student.academic_year_id ? supabase.from('academic_years').select('name').eq('id', student.academic_year_id).single() : Promise.resolve({ data: null }),
+      student.batch_id ? supabase.from('batches').select('name').eq('id', student.batch_id).single() : Promise.resolve({ data: null }),
+      student.branch_id ? supabase.from('branches').select('name').eq('id', student.branch_id).single() : Promise.resolve({ data: null }),
+      student.board_id ? supabase.from('boards').select('name').eq('id', student.board_id).single() : Promise.resolve({ data: null }),
+      supabase.from('student_fee_summary').select('*, fee_structures(name)').eq('student_id', params.id),
+      canEnterFee ? supabase.from('fee_heads').select('id,name').eq('status', 'ACTIVE').eq('org_id', session.orgId) : Promise.resolve({ data: null }),
+      supabase.from('ptm_records').select('*').eq('student_id', params.id).order('ptm_date', { ascending: false })
+    ]);
 
   const feeHeadOptions = (feeHeadsResult.data ?? []).map((f) => ({ value: f.id, label: f.name }));
 
@@ -76,6 +81,7 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
         <Info label="Course" value={course?.name} />
         <Info label="Batch" value={batch?.name} />
         <Info label="Branch" value={branch?.name} />
+        <Info label="Board" value={board?.name} />
         <Info label="School Name" value={student.school_name} />
         <Info label="Last Year %" value={student.last_year_percentage} />
       </div>
@@ -136,6 +142,76 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
                 ) : null}
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-900">PTM Records</h2>
+          {canWritePtm && (
+            <PtmRecordDialog
+              mode="create"
+              studentId={student.id}
+              studentLabel={student.name}
+              buttonLabel="+ Add PTM Record"
+              buttonClassName="btn-primary"
+            />
+          )}
+        </div>
+        {(ptmRecords ?? []).length === 0 ? (
+          <div className="card p-6 text-sm text-slate-500">
+            No PTM records yet.
+            {canWritePtm && ' Use "Add PTM Record" to log one.'}
+          </div>
+        ) : (
+          <div className="card overflow-x-auto">
+            <table className="table-base">
+              <thead>
+                <tr>
+                  <th>Date of PTM</th>
+                  <th>Attended</th>
+                  <th>Parent&apos;s Remarks</th>
+                  <th>Counsellor Remarks</th>
+                  {canWritePtm && <th></th>}
+                </tr>
+              </thead>
+              <tbody>
+                {(ptmRecords ?? []).map((r) => (
+                  <tr key={r.id}>
+                    <td>{formatDate(r.ptm_date)}</td>
+                    <td>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          r.attended ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
+                        }`}
+                      >
+                        {r.attended ? 'Yes' : 'No'}
+                      </span>
+                    </td>
+                    <td className="max-w-xs">{r.parent_remarks ?? '-'}</td>
+                    <td className="max-w-xs">{r.counsellor_remarks ?? '-'}</td>
+                    {canWritePtm && (
+                      <td className="whitespace-nowrap text-right">
+                        <PtmRecordDialog
+                          mode="edit"
+                          recordId={r.id}
+                          studentLabel={student.name}
+                          initial={{
+                            ptm_date: r.ptm_date,
+                            attended: r.attended,
+                            parent_remarks: r.parent_remarks,
+                            counsellor_remarks: r.counsellor_remarks
+                          }}
+                          buttonLabel="Edit"
+                          buttonClassName="btn-ghost px-2 py-1 text-xs"
+                        />
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

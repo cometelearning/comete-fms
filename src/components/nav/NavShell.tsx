@@ -13,8 +13,8 @@ interface NavItem {
   children?: NavItem[];
 }
 
-// "Masters" bundles the setup screens (Academic Year / Branch / Class /
-// Course / Batch / Fee Head) that a fee structure depends on. These are deliberately grouped
+// "Masters" bundles the setup screens (Academic Year / Board / Branch /
+// Class / Course / Batch / Fee Head) that a fee structure depends on. These are deliberately grouped
 // under one entry rather than added as separate top-level items, per the
 // spec's "keep navigation clean, no unnecessary items" instruction - but
 // each one is a real, permission-gated CRUD page (masters.read/write),
@@ -22,12 +22,14 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', permission: 'dashboard.view' },
   { href: '/students', label: 'Students', permission: 'students.read' },
+  { href: '/ptm', label: 'PTM', permission: 'students.read' },
   {
     href: '/academic-years',
     label: 'Masters',
     permission: 'masters.read',
     children: [
       { href: '/academic-years', label: 'Academic Years', permission: 'masters.read' },
+      { href: '/boards', label: 'Boards', permission: 'masters.read' },
       { href: '/branches', label: 'Branches', permission: 'masters.read' },
       { href: '/classes', label: 'Classes', permission: 'masters.read' },
       { href: '/courses', label: 'Courses', permission: 'masters.read' },
@@ -65,7 +67,7 @@ export function NavShell({
   }));
   const isWithin = (href: string) => pathname === href || pathname?.startsWith(href + '/');
   const [mastersOpen, setMastersOpen] = useState(() =>
-    ['/academic-years', '/branches', '/classes', '/courses', '/batches', '/fee-heads'].some((h) => isWithin(h))
+    ['/academic-years', '/boards', '/branches', '/classes', '/courses', '/batches', '/fee-heads'].some((h) => isWithin(h))
   );
 
   async function signOut() {

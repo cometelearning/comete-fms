@@ -61,6 +61,13 @@ export interface Branch {
   status: 'ACTIVE' | 'INACTIVE';
 }
 
+export interface Board {
+  id: string;
+  org_id: string;
+  name: string;
+  status: 'ACTIVE' | 'INACTIVE';
+}
+
 // Batch is just a type label (e.g. Morning / Evening) - course_id /
 // academic_year_id / branch_id exist in the database (from an earlier
 // design) but are unused and nullable; Batch Master no longer sets or
@@ -99,6 +106,7 @@ export interface Student {
   batch_id: string | null;
   academic_year_id: string | null;
   branch_id: string | null;
+  board_id: string | null;
   school_name: string | null;
   last_year_percentage: string | null;
   date_of_birth: string | null;
@@ -262,6 +270,23 @@ export interface LedgerEntry {
   ref_type: string;
   ref_id: string;
   balance: number;
+}
+
+// Gated by students.read/students.write (see migration 0014) rather than a
+// dedicated permission - PTM notes are student-linked personal data, same
+// sensitivity as the student profile itself, and reusing the existing keys
+// avoids a permissions-catalog backfill for every already-provisioned role.
+export interface PtmRecord {
+  id: string;
+  org_id: string;
+  student_id: string;
+  ptm_date: string;
+  attended: boolean;
+  parent_remarks: string | null;
+  counsellor_remarks: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export const PERMISSIONS = {

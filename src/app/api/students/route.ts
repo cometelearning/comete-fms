@@ -55,25 +55,29 @@ export async function GET(request: Request) {
 }
 
 // Every field on the Add Student form is mandatory (office data-entry
-// policy) except the fee section, which is handled separately by
-// /api/student-fees and stays optional. The Course/Batch/Academic
-// Year/Branch selects are HTML `required` on the form, so the browser
-// won't submit them blank in normal use - this schema re-checks the same
-// rule server-side.
+// policy) except the fee section (handled separately by /api/student-fees)
+// and student_mobile / student_email / parent_email, which the office
+// explicitly wants optional - not every student has their own phone or
+// email yet, and some parents don't have email. parent_mobile stays
+// mandatory - there must always be a way to reach a guardian. The
+// remaining selects are HTML `required` on the form, so the browser won't
+// submit them blank in normal use - this schema re-checks the same rule
+// server-side.
 const insertSchema = z.object({
   admission_number: z.string().min(1),
   name: z.string().min(2),
   guardian_name: z.string().min(1),
   date_of_birth: z.string().min(1),
-  student_mobile: z.string().min(1),
+  student_mobile: z.string().optional(),
   parent_mobile: z.string().min(1),
-  student_email: z.string().email(),
-  parent_email: z.string().email(),
+  student_email: z.string().email().optional().or(z.literal('')),
+  parent_email: z.string().email().optional().or(z.literal('')),
   address: z.string().min(1),
   course_id: z.string().uuid(),
   batch_id: z.string().uuid(),
   academic_year_id: z.string().uuid(),
   branch_id: z.string().uuid(),
+  board_id: z.string().uuid(),
   school_name: z.string().min(1),
   last_year_percentage: z.string().min(1),
   admission_date: z.string().min(1),
@@ -99,15 +103,16 @@ export async function POST(request: Request) {
         name: body.name,
         guardian_name: body.guardian_name,
         date_of_birth: body.date_of_birth,
-        student_mobile: body.student_mobile,
+        student_mobile: body.student_mobile || null,
         parent_mobile: body.parent_mobile,
-        student_email: body.student_email,
-        parent_email: body.parent_email,
+        student_email: body.student_email || null,
+        parent_email: body.parent_email || null,
         address: body.address,
         course_id: body.course_id,
         batch_id: body.batch_id,
         academic_year_id: body.academic_year_id,
         branch_id: body.branch_id,
+        board_id: body.board_id,
         school_name: body.school_name,
         last_year_percentage: body.last_year_percentage,
         admission_date: body.admission_date,
