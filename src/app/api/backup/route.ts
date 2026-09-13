@@ -24,6 +24,7 @@ const BACKUP_TABLES = [
   'practice_slips',
   'student_performance_records',
   'practice_copy_checks',
+  'teacher_student_shares',
   'fee_structures',
   'fee_structure_items',
   'fee_structure_installments',

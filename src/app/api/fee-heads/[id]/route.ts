@@ -6,7 +6,8 @@ export const runtime = 'nodejs';
 const updateSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
-  status: z.enum(['ACTIVE', 'INACTIVE']).optional()
+  status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+  is_tuition: z.boolean().optional()
 });
 
 export const { PATCH } = createItemHandlers({

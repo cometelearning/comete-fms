@@ -54,7 +54,8 @@ export function apiError(error: unknown): NextResponse {
     CANNOT_DISABLE_SELF: 'You cannot disable your own account.',
     INVALID_ROLE: 'That role does not exist.',
     STUDENT_HAS_FEE_RECORDS: 'This student has a fee account, payment or receipt on record and cannot be permanently deleted. Deactivate the student instead to keep their financial history intact.',
-    marks_obtained_within_total: 'Marks obtained cannot exceed total marks.'
+    marks_obtained_within_total: 'Marks obtained cannot exceed total marks.',
+    ux_fee_heads_single_tuition_head: 'Another fee head is already marked as the Tuition Fee head. Unmark it first before marking a different one.'
   };
 
   for (const code of Object.keys(knownBusinessErrors)) {

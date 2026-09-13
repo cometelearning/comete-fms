@@ -17,6 +17,13 @@ export default async function ReportsHubPage() {
   if (session.permissions.has('audit.view')) {
     cards.push({ href: '/reports/audit-logs', title: 'Audit Trail', desc: 'Full history of who changed what, and when.' });
   }
+  if (session.permissions.has('settings.manage')) {
+    cards.push({
+      href: '/reports/teacher-shares',
+      title: 'Teacher Share Report',
+      desc: "Each teacher's calculated share of Tuition Fee collected, from real payments."
+    });
+  }
 
   return (
     <div>

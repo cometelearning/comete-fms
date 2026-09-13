@@ -14,11 +14,17 @@ export default async function FeeHeadsPage() {
       canWrite={session.permissions.has('masters.write')}
       fields={[
         { name: 'name', label: 'Fee head name', type: 'text', required: true },
-        { name: 'description', label: 'Description', type: 'textarea' }
+        { name: 'description', label: 'Description', type: 'textarea' },
+        {
+          name: 'is_tuition',
+          label: 'This is the Tuition Fee head (used to calculate teacher tuition shares - only one fee head may be marked)',
+          type: 'checkbox'
+        }
       ]}
       columns={[
         { key: 'name', label: 'Name' },
-        { key: 'description', label: 'Description' }
+        { key: 'description', label: 'Description' },
+        { key: 'is_tuition', label: 'Tuition Fee', type: 'boolean' }
       ]}
     />
   );

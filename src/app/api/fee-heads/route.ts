@@ -5,7 +5,11 @@ export const runtime = 'nodejs';
 
 const insertSchema = z.object({
   name: z.string().min(1),
-  description: z.string().optional()
+  description: z.string().optional(),
+  // At most one fee head per org may be flagged is_tuition (migration 0023,
+  // partial unique index) - the "remainder bucket" the Teacher Tuition
+  // Share waterfall calculates against.
+  is_tuition: z.boolean().optional()
 });
 
 export const { GET, POST } = createListCreateHandlers({

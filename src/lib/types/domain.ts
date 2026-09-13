@@ -107,6 +107,31 @@ export interface FeeHead {
   name: string;
   description: string | null;
   status: 'ACTIVE' | 'INACTIVE';
+  // At most one fee head per org may be true (migration 0023, partial
+  // unique index) - the "remainder bucket" the Teacher Tuition Share
+  // waterfall calculates against. See TeacherStudentShare below.
+  is_tuition: boolean;
+}
+
+// A teacher's % share of the TUITION portion (only) of one specific
+// student's collections (migration 0023) - "Individually assigned
+// students" / "Percentage only" per explicit user choice. Multiple teachers
+// can each hold an independent share on the same student; percentages are
+// not required to sum to 100. Deliberately read-only against
+// payments/receipts - never writes to any financial table, and does not
+// process any payout.
+export interface TeacherStudentShare {
+  id: string;
+  org_id: string;
+  teacher_id: string;
+  student_id: string;
+  share_percentage: number;
+  effective_from: string;
+  effective_to: string | null;
+  status: 'ACTIVE' | 'INACTIVE';
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Student {
