@@ -20,16 +20,22 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const q = searchParams.get('q')?.trim();
     const courseId = searchParams.get('course_id');
+    const classId = searchParams.get('class_id');
     const batchId = searchParams.get('batch_id');
     const academicYearId = searchParams.get('academic_year_id');
+    const boardId = searchParams.get('board_id');
+    const branchId = searchParams.get('branch_id');
     const status = searchParams.get('status');
     const page = Math.max(1, Number(searchParams.get('page') ?? '1'));
 
     let query = supabase
       .from('students')
-      .select('id, student_code, admission_number, name, guardian_name, student_mobile, parent_mobile, student_email, course_id, batch_id, academic_year_id, status, admission_date', {
-        count: 'exact'
-      })
+      .select(
+        'id, student_code, admission_number, name, guardian_name, student_mobile, parent_mobile, student_email, course_id, class_id, batch_id, academic_year_id, status, admission_date, classes(name)',
+        {
+          count: 'exact'
+        }
+      )
       .eq('org_id', session.orgId);
 
     if (q) {
@@ -39,8 +45,11 @@ export async function GET(request: Request) {
       );
     }
     if (courseId) query = query.eq('course_id', courseId);
+    if (classId) query = query.eq('class_id', classId);
     if (batchId) query = query.eq('batch_id', batchId);
     if (academicYearId) query = query.eq('academic_year_id', academicYearId);
+    if (boardId) query = query.eq('board_id', boardId);
+    if (branchId) query = query.eq('branch_id', branchId);
     // Default-hide inactive students unless a filter specifically asks for
     // them (explicit user request): no status param, or an explicit
     // ACTIVE/INACTIVE, filters normally; 'ALL' shows both.

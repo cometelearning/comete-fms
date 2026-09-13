@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
 import { formatDate, studentDisplayName } from '@/lib/utils/format';
 import { TeacherShareDialog } from './TeacherShareDialog';
@@ -50,7 +51,12 @@ export function TeacherSharesList({ teachers }: { teachers: FieldOption[] }) {
             Examination Fee are always excluded.
           </p>
         </div>
-        <TeacherShareDialog mode="create" teachers={teachers} buttonLabel="+ Add Teacher Share" />
+        <div className="flex gap-2">
+          <Link href="/teacher-shares/bulk" className="btn-secondary">
+            Bulk Assign
+          </Link>
+          <TeacherShareDialog mode="create" teachers={teachers} buttonLabel="+ Add Teacher Share" />
+        </div>
       </div>
 
       <div className="card mb-4 grid grid-cols-1 gap-3 p-4 sm:grid-cols-3">
