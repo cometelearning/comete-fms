@@ -93,7 +93,20 @@ export function TeacherShareReport({ teachers }: { teachers: FieldOption[] }) {
 
           <div className="card overflow-x-auto">
             {data.rows.length === 0 ? (
-              <p className="p-6 text-sm text-slate-500">No tuition share to report for this period.</p>
+              <div className="p-6 text-sm text-slate-500">
+                <p className="mb-3">
+                  No tuition share to report for this period. This usually means the selected teacher has no Teacher Share rule set up yet,
+                  or no tuition fee was collected from their assigned students in this date range.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Link href="/teacher-shares" className="btn-secondary">
+                    Set Up Teacher Shares
+                  </Link>
+                  <Link href="/teacher-shares/bulk" className="btn-secondary">
+                    Bulk Assign
+                  </Link>
+                </div>
+              </div>
             ) : (
               <table className="table-base">
                 <thead>
